@@ -31,14 +31,15 @@ export const makeDataSource = (): DataSource => {
         ssl: isProduction
           ? {
               rejectUnauthorized: true, // This = verify-full
+              // ca: fs.readFileSync('/path/to/ca.pem').toString(), // if you have CA cert
               // ca: process.env.DATABASE_SSL_CA
               //   ? Buffer.from(process.env.DATABASE_SSL_CA, 'base64').toString('utf-8')
               //   : undefined,
             }
           : false, // This = disable
         connectionTimeoutMillis: 10000,
-        query_timeout: 10000,
-        statement_timeout: 10000,
+        // query_timeout: 10000,
+        // statement_timeout: 10000,
         max: 20,
         idleTimeoutMillis: 30000,
       },
@@ -57,70 +58,16 @@ export const makeDataSource = (): DataSource => {
     ssl: isProduction,
     extra: {
       ssl: isProduction ? { rejectUnauthorized: true } : false,
-      connectionTimeoutMillis: 10000,
-      query_timeout: 10000,
-      statement_timeout: 10000,
+      connectionTimeoutMillis: 20000,
+      // query_timeout: 10000,
+      // statement_timeout: 10000,
       max: 20,
       idleTimeoutMillis: 30000,
+      keepAlive: true,
+      retryAttempts: 10,
+      retryDelay: 5000,
     },
   };
   return new DataSource(options);
 };
-
-// export const makeDataSource = () => {
-//   const isProduction = ENV_CONFIG.APP.env === 'production';
-//   const isDevelopment = ENV_CONFIG.APP.env === 'development';
-
-//   const common = {
-//     type: ENV_CONFIG.DATABASE.DRIVER as 'postgres',
-//     // entities: ['**/*.entity.ts'],
-//     // migrations: ['src/database/migrations/*-migration.ts'],
-//     // migrationsRun: !isDevelopment,
-//     // entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
-//     // migrations: [join(__dirname, '..', '/database/migrations', '*.{ts,js}')],
-//     // logging: isDevelopment,
-//     logging: isDevelopment ? ['query', 'error', 'schema'] as const : false,
-//     entities: ['src/**/*.entity.ts'],
-//     migrations: ['src/database/migrations/*.ts'],
-//     migrationsTableName: 'migrations',
-//     migrationsRun: false,
-//     synchronize: false,
-//   };
-
-//   if (process.env.DATABASE_URL) {
-//     return new DataSource({
-//       ...common,
-//       url: `${process.env.DATABASE_URL}?sslmode=verify-full`, // ← explicit
-//       ssl: isProduction,
-//       extra: {
-//         ssl: isProduction
-//           ? {
-//               rejectUnauthorized: true, // ← verify-full behaviour
-//               // ca: fs.readFileSync('/path/to/ca.pem').toString(), // if you have CA cert
-//               //ca: process.env.DATABASE_SSL_CA ? Buffer.from(process.env.DATABASE_SSL_CA, 'base64').toString('utf-8') : undefined,
-//             }
-//           : false,
-//         connectionTimeoutMillis: 10000,
-//         query_timeout: 10000,
-//         statement_timeout: 10000,
-//         poolSize: 10,
-//         max: 20,
-//         idleTimeoutMillis: 30000,
-//       },
-//     });
-//   }
-
-//   return new DataSource({
-//     ...common,
-//     host: ENV_CONFIG.DATABASE.HOST,
-//     port: ENV_CONFIG.DATABASE.PORT,
-//     username: ENV_CONFIG.DATABASE.USERNAME,
-//     password: ENV_CONFIG.DATABASE.PASSWORD,
-//     database: ENV_CONFIG.DATABASE.NAME,
-//     ssl: isProduction,
-//     extra: {
-//       ssl: isProduction ? { rejectUnauthorized: true } : false,
-//     },
-//   });
-// };
 export const AppDataSource = makeDataSource();

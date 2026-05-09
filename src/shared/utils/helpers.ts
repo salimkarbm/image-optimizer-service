@@ -2,6 +2,8 @@ import { Response } from 'express';
 import crypto, { CipherKey } from 'crypto';
 import { PaginatedResponse } from '../types/paginate.type';
 import { ErrorResponse } from '../types';
+import { isAfter, parseISO } from 'date-fns';
+import { DateTime } from 'luxon';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // GCM recommends 12 bytes
@@ -53,7 +55,7 @@ export const HttpResponse = ({
 }: {
   status?: number;
   message?: string;
-  data: any;
+  data?: any;
   response: Response;
 }) => {
   return response.status(status).json({ data, message });
@@ -101,4 +103,31 @@ export const decrypt = (text: string): string => {
   let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
   decrypted += decipher.final('utf8'); // throws if tampered
   return decrypted;
+};
+
+export function extractPublicId(url: string) {
+  const regex = /\/([^/]+)\.[a-z]+$/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+export const getDateAndTime = (minutes = 0) => {
+  const currentDate = new Date();
+  currentDate.setHours(currentDate.getHours() + 1); // Add 1 hour
+  currentDate.setMinutes(currentDate.getMinutes() + minutes);
+  return currentDate.toISOString();
+};
+export const getDate = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const getLocalTime = (
+  date: Date,
+  zone = 'Africa/Lagos',
+): string | null => {
+  const localTime = DateTime.fromJSDate(date).setZone(zone).toISO();
+  return localTime;
 };

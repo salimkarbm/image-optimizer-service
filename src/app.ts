@@ -7,6 +7,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import swaggerUi from 'swagger-ui-express';
+// import swaggerOptions from './swagger-jsdoc';
 import AppError from './shared/utils/errors/appError';
 import { errorHandler } from './middlewares/errors/errorMiddleware';
 import router from './routes/v1';
@@ -21,6 +22,7 @@ dotenv.config();
 const app: Application = express();
 
 async function bootstrap() {
+  // const specs: swaggerJsdoc.Options = swaggerOptions;
   const specs: swaggerJsdoc.Options = specConfig;
 
   // Security middleware

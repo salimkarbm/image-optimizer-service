@@ -7,6 +7,7 @@ export const configuration = () => {
       env: process.env.APP_ENV || 'development',
       name: process.env.APP_NAME,
       version: process.env.APP_VERSION,
+      ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || 'your-encryption-key',
     },
     DATABASE: {
       URI:
@@ -26,6 +27,23 @@ export const configuration = () => {
       accessTokenExpiry: process.env.ACCESS_TOKEN_EXPIRY || '1d',
       refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY || '14d',
       expiresIn: process.env.JWT_EXPIRY || '30s',
+    },
+    MAILER: {
+      NAME: process.env.EMAIL_NAME || 'gmail',
+      HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      PORT:
+        parseInt(process.env.EMAIL_PORT as string, 10) ||
+        process.env.EMAIL_PORT ||
+        587,
+      USERNAME: process.env.EMAIL_USERNAME,
+      PASSWORD: process.env.EMAIL_PASSWORD,
+      FROM: process.env.EMAIL_FROM || 'noreply@yourapp.com',
+    },
+    OTP: {
+      EXPIRY_TIME: parseInt(process.env.OTP_EXPIRY_TIME as string, 10) || 10, // in minutes
+      MAX_ATTEMPTS: parseInt(process.env.OTP_MAX_ATTEMPTS as string, 10) || 3,
+      GENERATION_INTERVAL:
+        parseInt(process.env.OTP_GENERATION_INTERVAL as string, 10) || 1, // in minutes
     },
   };
 };

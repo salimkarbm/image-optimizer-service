@@ -50,7 +50,7 @@ export default class User extends BaseEntity {
   @Column()
   lastName!: string;
 
-  @Column( {
+  @Column({
     nullable: true,
   })
   otherName!: string;
