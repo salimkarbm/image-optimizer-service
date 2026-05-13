@@ -4,6 +4,7 @@ import { ENV_CONFIG } from '.';
 import { AuditLog } from '../audit/entities/audit.entity';
 import User from '../users/entities/user.entity';
 import { join } from 'path';
+import OTP from '../users/entities/otp.entity';
 
 dotenv.config();
 export const makeDataSource = (): DataSource => {
@@ -13,7 +14,7 @@ export const makeDataSource = (): DataSource => {
   const common: Partial<DataSourceOptions> = {
     type: 'postgres',
     schema: 'public',
-    entities: [User, AuditLog],
+    entities: [User, AuditLog, OTP],
     migrations: [join(__dirname, '..', '/database/migrations', '*.{ts,js}')],
     migrationsTableName: 'migrations',
     migrationsRun: false,
@@ -37,7 +38,7 @@ export const makeDataSource = (): DataSource => {
               //   : undefined,
             }
           : false, // This = disable
-        connectionTimeoutMillis: 10000,
+        connectionTimeoutMillis: 30000,
         // query_timeout: 10000,
         // statement_timeout: 10000,
         max: 20,
@@ -58,7 +59,7 @@ export const makeDataSource = (): DataSource => {
     ssl: isProduction,
     extra: {
       ssl: isProduction ? { rejectUnauthorized: true } : false,
-      connectionTimeoutMillis: 20000,
+      connectionTimeoutMillis: 30000,
       // query_timeout: 10000,
       // statement_timeout: 10000,
       max: 20,

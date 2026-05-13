@@ -6,3 +6,13 @@ export type EmailMessageOptions = {
   text?: string;
   attachments?: any;
 };
+
+export type sendEmail = {
+  firstName: string;
+  email?: string;
+  otp?: string;
+  expiryTime?: number;
+  appName?: string;
+  appTagline?: string;
+  teamName?: string;
+};

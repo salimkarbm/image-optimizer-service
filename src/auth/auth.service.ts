@@ -7,12 +7,71 @@ import { EmailService } from '../shared/services/email.service';
 import { OTPService } from '../shared/services/otp.service';
 import { ENV_CONFIG } from '../config';
 import User from '../users/entities/user.entity';
+import OTPRepository from '../repositories/user/otp.repository';
+import OTP from '../users/entities/otp.entity';
+import { otpType } from '../shared/enums/otp.enum';
 
 const userRepo = new UserRepository(AppDataSource.manager);
+const otpRepo = new OTPRepository(AppDataSource.manager);
 const emailService = new EmailService();
 const otpService = new OTPService();
 
 export class UserService {
+  private createOtp = async (
+    identifier: string,
+    type: otpType,
+  ): Promise<OTP> => {
+    const otpCode = otpService.generateOTP();
+    const hashedOtp = otpService.strongHashOtp(otpCode);
+    const otp = otpRepo.create({
+      identifier,
+      type,
+      code: hashedOtp,
+      expiredAt: otpService.calculateOtpExpiration(ENV_CONFIG.OTP.EXPIRY_TIME),
+    });
+    await otpRepo.save(otp);
+    return otp;
+  };
+
+  private sendVerificationEmail = async (
+    user: User,
+    otp: OTP,
+    message: any,
+  ) => {
+    try {
+      const sendEmail = await emailService.signupOtpEmail(
+        message,
+        parseInt(otp.code, 10),
+        user.firstName,
+      );
+      // retry ONLY if sending failed
+      if (sendEmail.rejected.length > 0) {
+        await emailService.retryEmail(
+          message,
+          emailService.signupOtpEmail.bind(emailService),
+        );
+      }
+      return sendEmail;
+    } catch (error) {
+      // retry ONLY when email sending throws error
+      // await emailService.retryEmail(message, sendEmail);
+
+      // optional: remove user if email completely fails
+      await userRepo.delete({
+        id: user.id,
+      });
+
+       await otpRepo.delete({
+        identifier: user.email,
+      });
+
+      throw new AppError(
+        'Failed to send verification email',
+        STATUS_CODE.INTERNAL_SERVER_ERROR,
+      );
+    }
+  };
+
   signUp = async (req: Request): Promise<User> => {
     const userExist = await userRepo.findOne({
       where: [{ email: req.body.email }, { username: req.body.username }],
@@ -23,44 +82,19 @@ export class UserService {
         STATUS_CODE.NOT_FOUND,
       );
     }
-    const otp = otpService.generateOTP();
+    const otp = await this.createOtp(req.body.email, otpType.email);
     const user = userRepo.create({
       ...req.body,
-      emailVerificationToken: otpService.strongHashOtp(otp),
-      emailVerificationTokenExpires: otpService.calculateOtpExpiration(ENV_CONFIG.OTP.EXPIRY_TIME), // default to 10 minutes if not set
     });
     await userRepo.save(user);
 
     const message = {
-          to: user.email,
-          subject: 'Welcome to Image Processor API',
-          from: ENV_CONFIG.MAILER.FROM,
-        }
+      to: user.email,
+      subject: 'Welcome to Image Processor API',
+      from: ENV_CONFIG.MAILER.FROM,
+    };
 
-    try {
-      const sendEmail = await emailService.signupOtpEmail(
-        message,
-        parseInt(otp, 10),
-        user.firstName,
-      );
-      // retry ONLY if sending failed
-      if (sendEmail.rejected.length > 0) {
-        await emailService.retryEmail(message, emailService.signupOtpEmail.bind(emailService));
-      }
-    } catch (error) {
-      // retry ONLY when email sending throws error
-      // await emailService.retryEmail(message, sendEmail);
-
-      // optional: remove user if email completely fails
-      await userRepo.delete({
-        id: user.id,
-      });
-
-      throw new AppError(
-        'Failed to send verification email',
-        STATUS_CODE.INTERNAL_SERVER_ERROR,
-      );
-    }
+    await this.sendVerificationEmail(user, otp, message);
     return user;
-  };
+}
 }

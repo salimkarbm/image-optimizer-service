@@ -74,45 +74,30 @@ export default class User extends BaseEntity {
   })
   role!: UserRole;
 
-  @Column({
-    type: 'enum',
-    enum: UserStatus,
-    default: UserStatus.PENDING,
-  })
-  status!: UserStatus;
-
-  @Column({ nullable: true })
-  emailVerificationToken?: string;
-
-  @Column({ nullable: true })
-  emailVerificationExpires?: Date;
+  @Column({ default: false })
+  isVerified!: boolean;
 
   @Column({ default: false })
-  isEmailVerified!: boolean;
-
-  @Column({ default: false })
-  isOtpVerified!: boolean;
-
-  @Column({ nullable: true })
-  otpToken!: string;
-
-  @Column({ nullable: true })
-  otpExpires!: Date;
-
-  @Column({ nullable: true })
-  resetToken?: string;
-
-  @Column({ nullable: true })
-  resetTokenExpires?: Date;
+  isBlocked!: boolean;
 
   @Column({ nullable: true })
   suspensionReason!: string;
 
-  // @Column({ default: false })
-  // isApproved!: boolean;
+  @Column({ type: 'timestamp', nullable: true })
+  lastLoginAt!: Date;
 
-  // @Column({ default: false })
-  // isVerified!: boolean;
+  // @Column({
+  //   type: 'timestamp',
+  //   nullable: true,
+  // })
+  // lastLogin!: Date;
+
+  // @Column({
+  //   type: 'enum',
+  //   enum: UserStatus,
+  //   default: UserStatus.PENDING,
+  // })
+  // status!: UserStatus;
 
   // @Column({
   //   type: 'jsonb',
@@ -143,15 +128,6 @@ export default class User extends BaseEntity {
   //   default: [],
   // })
   // loginHistory!: LoginHistoryEntry[];
-
-  // @Column({ nullable: true })
-  // lastLoginAt!: Date;
-
-  // @Column({
-  //   type: 'timestamp',
-  //   nullable: true,
-  // })
-  // lastLogin!: Date;
 
   // @Column({ default: 0 })
   // totalActiveDays!: number;
@@ -185,13 +161,6 @@ export default class User extends BaseEntity {
   //   deviceInfo: string;
   //   createdAt: Date;
   // }[];
-
-  // @Column({
-  //   nullable: false,
-  //   comment: 'User active status',
-  //   default: false,
-  // })
-  // isActive!: boolean;
 
   @Column({ nullable: true })
   avatar?: string;

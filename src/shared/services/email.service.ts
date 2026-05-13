@@ -66,7 +66,10 @@ export class EmailService {
     otp: number,
     firstName: string,
   ): Promise<nodemailer.SentMessageInfo> {
-    const template: string = SignupOtpTemplate(otp?.toString(), firstName);
+    const template: string = SignupOtpTemplate({
+      otp: otp?.toString(),
+      firstName,
+    });
     return await this.sendEmail(message, template);
   }
 
