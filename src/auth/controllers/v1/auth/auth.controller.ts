@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { HttpResponse } from '../../../shared/utils';
-import { UserService } from '../../../auth/auth.service';
-import { STATUS_CODE, SUCCESS_MESSAGE } from '../../../shared/constants';
+import { HttpResponse } from '../../../../shared/utils';
+import { UserService } from '../../../auth.service';
+import { STATUS_CODE, SUCCESS_MESSAGE } from '../../../../shared/constants';
 
 const userService = new UserService();
 export const signUp = async (
@@ -35,6 +35,28 @@ export const verifyEmail = async (
     });
   } catch (err) {
     return next(err);
+  }
+};
+
+export const resendOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await userService.resendOTP(req);
+    return HttpResponse({
+      response: res,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.RESENT('OTP'),
+    });
+  } catch (err: any) {
+    return next(err);
+    // return HttpResponse({
+    //   response: res,
+    //   status: STATUS_CODE.INTERNAL_SERVER_ERROR,
+    //   message: err.message || 'Failed to resend OTP',
+    // });
   }
 };
 

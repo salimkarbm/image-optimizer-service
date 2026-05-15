@@ -5,15 +5,15 @@ import { STATUS_CODE } from '../constants';
 import AppError from '../utils/errors/appError';
 export class OTPService {
   private readonly tenMinutesInMs: number = 10 * 60 * 1000;
-  private readonly fiveMinutesInMs: number = 5 * 60 * 1000;
   private readonly oneMinuteInMs: number = 60 * 1000;
   private readonly otpExpiry: number = this.tenMinutesInMs;
   private readonly secretKey: string = ENV_CONFIG.APP.ENCRYPTION_KEY;
-  private readonly OTP_LENGTH = 6;
   private readonly MAX_OTP_GENERATION_ATTEMPTS = 3;
+  private readonly fiveMinutesInMs: number = 5 * 60 * 1000;
+  private readonly OTP_LENGTH = 6;
   private readonly OTP_GENERATION_INTERVAL = this.oneMinuteInMs;
 
-  generateOTP(): string {
+  generate(): string {
     try {
       // Generate a cryptographically secure random number
       const randomBytes = crypto.randomBytes(4); // 4 bytes = 32 bits
@@ -31,7 +31,7 @@ export class OTPService {
     }
   }
 
-  strongHashOtp(otp: string): string {
+  strongHash(otp: string): string {
     try {
       // HMAC uses your secretKey so rainbow tables won't work
       return CryptoJS.HmacSHA256(otp.trim(), this.secretKey.trim()).toString(
@@ -46,7 +46,7 @@ export class OTPService {
     }
   }
 
-  verifyStrongHashedOtp(plainOtp: string, hashedOtp: string): boolean {
+  verifyStrongHashed(plainOtp: string, hashedOtp: string): boolean {
     try {
       const computedHash = CryptoJS.HmacSHA256(
         plainOtp.trim(),
@@ -60,7 +60,7 @@ export class OTPService {
     }
   }
 
-  weakHashOtp(otp: string): string {
+  weakHash(otp: string): string {
     try {
       const hashedOtp = CryptoJS.SHA256(otp).toString();
       return hashedOtp;
@@ -73,10 +73,10 @@ export class OTPService {
     }
   }
 
-  verifyWeakHashedOtp(hashedOtp: string, otpToVerify: string): boolean {
+  verifyWeakHashed(hashedOtp: string, otpToVerify: string): boolean {
     try {
       console.debug('Verifying hashed OTP');
-      const hashedInput = this.weakHashOtp(otpToVerify);
+      const hashedInput = this.weakHash(otpToVerify);
       const isValid = hashedOtp === hashedInput;
       console.debug(
         `Hashed OTP verification ${isValid ? 'successful' : 'failed'}`,
@@ -88,7 +88,7 @@ export class OTPService {
     }
   }
 
-  encryptOtp(otp: string, email: string): string {
+  encrypt(otp: string, email: string): string {
     try {
       const timestamp = new Date().getTime();
       const data = `${otp}|${email}|${timestamp}`;
@@ -106,7 +106,7 @@ export class OTPService {
     }
   }
 
-  verifyEncryptedOtp(
+  verifyEncrypted(
     encryptedOtp: string,
     otpToVerify: string,
     email: string,
@@ -137,7 +137,7 @@ export class OTPService {
     }
   }
 
-  isOtpExpired(expirationTime: Date): boolean {
+  isExpired(expirationTime: Date): boolean {
     const currentTime = new Date();
     const isExpired =
       new Date(expirationTime).getTime() < currentTime.getTime();
@@ -147,11 +147,37 @@ export class OTPService {
     return false;
   }
 
-  calculateOtpExpiration(expirationTimeInMinutes: number = 10): Date {
+  calculateExpiration(expirationTimeInMinutes: number = 10): Date {
     return new Date(Date.now() + expirationTimeInMinutes * 60 * 1000);
   }
 
-  getOtpExpiryTime(): Date {
+  expiryTime(): Date {
     return new Date(Date.now() + this.otpExpiry);
+  }
+
+  nextResendTime(resendIntervalInMinutes: number = 5): Date {
+    return new Date(Date.now() + resendIntervalInMinutes * 60 * 1000); // default 5 mins cool down
+  }
+
+  coolDownSeconds(resendCount: number): number {
+    const coolDowns = [60, 120, 300]; // 1min, 2min, 5min
+    return coolDowns[resendCount] ?? 300; // cap at 5min
+  }
+
+  checkCoolDown(nextResendAt: Date | null): number | null {
+    if (
+      nextResendAt &&
+      new Date().getTime() < new Date(nextResendAt).getTime()
+    ) {
+      const secondsLeft = Math.ceil(
+        (nextResendAt.getTime() - Date.now()) / 1000,
+      );
+      return secondsLeft;
+    }
+    return null;
+  }
+
+  checkMaxResendAttempts(resendCount: number): boolean {
+    return resendCount >= this.MAX_OTP_GENERATION_ATTEMPTS;
   }
 }

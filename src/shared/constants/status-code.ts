@@ -22,6 +22,7 @@ export const HttpStatus = () => {
     BAD_GATEWAY: 502,
     SERVICE_UNAVAILABLE_ERROR: 503,
     GATEWAY_TIMEOUT: 504,
+    TOO_MANY_REQUESTS: 429,
   };
 };
 

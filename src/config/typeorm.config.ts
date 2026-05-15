@@ -27,7 +27,7 @@ export const makeDataSource = (): DataSource => {
       ...common,
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      ssl:{ rejectUnauthorized: false }, // for neon heroku, otherwise set to isProduction // Tell pg to use SSL
+      ssl: { rejectUnauthorized: false }, // for neon heroku, otherwise set to isProduction // Tell pg to use SSL
       extra: {
         // ssl: isProduction
         //   ? {
@@ -59,7 +59,7 @@ export const makeDataSource = (): DataSource => {
     database: ENV_CONFIG.DATABASE.NAME,
     ssl: isProduction,
     extra: {
-       ssl: isProduction ? { rejectUnauthorized: true } : false,
+      ssl: isProduction ? { rejectUnauthorized: true } : false,
       connectionTimeoutMillis: 30000,
       // query_timeout: 10000,
       // statement_timeout: 10000,

@@ -108,10 +108,10 @@
 
 /**
  * @openapi
- * /v1/auth/login:
+ * /v1/auth/resend-otp:
  *   post:
- *     summary: Login to the Image Processor API
- *     description: Authenticates a user and returns a JWT token for subsequent requests.
+ *     summary: Resend OTP for email verification
+ *     description: Resends a one-time password (OTP) to the user's email for verification purposes.
  *     tags:
  *       - Authentication
  *     requestBody:
@@ -120,31 +120,98 @@
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
  *             properties:
- *               username:
+ *               email:
  *                 type: string
- *                 example: "john_doe"
- *               password:
- *                 type: string
- *                 example: "secure_password"
+ *                 format: email
+ *                 example: "john.doe@example.com"
  *     responses:
  *       200:
- *         description: Successful login, returns a JWT token.
+ *         description: OTP resent successfully.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 status:
- *                   type: string
- *                   example: "ok"
  *                 message:
  *                   type: string
- *                   example: "Login successful"
+ *                   example: "OTP sent to your email"
+ *       400:
+ *         description: Invalid email format.
+ *       404:
+ *         description: User not found.
+ *       429:
+ *         description: Too many requests - OTP already sent recently.
+ *       500:
+ *         description: Internal server error.
+ */
+
+/**
+ * @openapi
+ * /v1/auth/login:
+    *   post:
+ *     summary: User login
+ *     description: Logs in a user with email and password.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "Password123!"
+ *     responses:
+ *       200:
+ *         description: User logged in successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User logged in successfully"
  *                 data:
  *                   type: object
  *                   properties:
- *                     token:
+ *                     id:
  *                       type: string
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+ *                       example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *                     email:
+ *                       type: string
+ *                       example: "john.doe@example.com"
+ *                     firstName:
+ *                       type: string
+ *                       example: "John"
+ *                     lastName:
+ *                       type: string
+ *                       example: "Doe"
+ *                     username:
+ *                       type: string
+ *                       example: "johndoe"
+ *                     role:
+ *                       type: string   
+ *                       example: "user"
+ *                     status:
+ *                       type: string   
+ *                       example: "pending"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */

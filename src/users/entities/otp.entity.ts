@@ -27,4 +27,32 @@ export default class OTP extends BaseEntity {
     comment: 'The identifier for the user or entity associated with the OTP',
   })
   identifier!: string;
+
+  @Column({
+    type: 'int',
+    default: 0,
+    comment: 'Number of times the OTP has been resent',
+  })
+  resendCount!: number; // how many times they've resent
+
+  @Column({
+    type: 'timestamptz',
+    nullable: true,
+    comment: 'The timestamp when the next OTP can be resent',
+  })
+  nextResendAt!: Date | null; // earliest they can request again
+
+  @Column({
+    type: 'int',
+    default: 0,
+    comment: 'Number of wrong OTP entry attempts',
+  })
+  attempts!: number; // wrong OTP entry attempts
+
+  @Column({
+    type: 'boolean',
+    default: false,
+    comment: 'Indicates if the OTP has been used',
+  })
+  isUsed!: boolean; // has it been consumed
 }

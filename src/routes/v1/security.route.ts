@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { securityHeader, securityRecommendations } from '../../controllers';
+import { securityHeader, securityRecommendations } from '../../auth/controllers';
 
 const router = Router();
 

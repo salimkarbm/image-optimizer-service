@@ -8,7 +8,6 @@ import { OTPService } from '../shared/services/otp.service';
 import { ENV_CONFIG } from '../config';
 import User from '../users/entities/user.entity';
 import OTPRepository from '../repositories/user/otp.repository';
-import OTP from '../users/entities/otp.entity';
 import { otpType } from '../shared/enums/otp.enum';
 
 const userRepo = new UserRepository(AppDataSource.manager);
@@ -21,13 +20,14 @@ export class UserService {
     identifier: string,
     type: otpType,
   ): Promise<string> => {
-    const otpCode = otpService.generateOTP();
-    const hashedOtp = otpService.strongHashOtp(otpCode);
+    const otpCode = otpService.generate();
+    const hashedOtp = otpService.strongHash(otpCode);
     const otp = otpRepo.create({
       identifier,
       type,
       code: hashedOtp,
-      expiredAt: otpService.calculateOtpExpiration(ENV_CONFIG.OTP.EXPIRY_TIME),
+      expiredAt: otpService.calculateExpiration(ENV_CONFIG.OTP.EXPIRY_TIME),
+      nextResendAt: otpService.nextResendTime(1), // set next resend time to 1 minute later to prevent spamming
     });
     await otpRepo.save(otp);
     return otpCode;
@@ -109,10 +109,10 @@ export class UserService {
     if (!otpRecord) {
       throw new AppError('OTP not found for this email', STATUS_CODE.NOT_FOUND);
     }
-    if (otpService.isOtpExpired(otpRecord.expiredAt)) {
+    if (otpService.isExpired(otpRecord.expiredAt)) {
       throw new AppError('OTP has expired', STATUS_CODE.BAD_REQUEST);
     }
-    const isValidOtp = otpService.verifyStrongHashedOtp(otp, otpRecord.code);
+    const isValidOtp = otpService.verifyStrongHashed(otp, otpRecord.code);
     if (!isValidOtp) {
       throw new AppError('Invalid OTP code', STATUS_CODE.BAD_REQUEST);
     }
@@ -130,5 +130,74 @@ export class UserService {
     await otpRepo.delete({
       id: otpRecord.id,
     });
+    //TODO: send confirmation email for successful verification
+  };
+
+  resendOTP = async (req: Request): Promise<void> => {
+    const { email } = req.body;
+    const user = await userRepo.findOne({
+      where: { email },
+    });
+    if (!user) {
+      throw new AppError(
+        'User not found for this email',
+        STATUS_CODE.NOT_FOUND,
+      );
+    }
+    if (user.isVerified) {
+      throw new AppError('Email is already verified', STATUS_CODE.BAD_REQUEST);
+    }
+
+    const otp = await otpRepo.findOne({
+      where: { identifier: email, isUsed: false },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!otp) {
+      throw new AppError(
+        'No active OTP found. Please request a new one.',
+        STATUS_CODE.NOT_FOUND,
+      );
+    }
+
+    // Check coolDown
+    const secondsLeft = otpService.checkCoolDown(otp.nextResendAt);
+    if (secondsLeft !== null) {
+      throw new AppError(
+        `Please wait ${secondsLeft} seconds before requesting again.`,
+        STATUS_CODE.TOO_MANY_REQUESTS,
+      );
+    }
+
+    // Check max resends
+    if (otpService.checkMaxResendAttempts(otp.resendCount)) {
+      throw new AppError(
+        'Maximum resend attempts reached. Please request a new OTP after 24 hours.',
+        STATUS_CODE.BAD_REQUEST,
+      );
+    }
+
+    // Generate new OTP
+    const coolDown = otpService.coolDownSeconds(otp.resendCount);
+    const nextResendAt = new Date(Date.now() + coolDown * 1000);
+    const otpCode = await this.createOtp(email, otpType.email);
+    otp.expiredAt = otpService.expiryTime(); // 10 mins
+    otp.resendCount = otp.resendCount + 1;
+    otp.nextResendAt = nextResendAt;
+
+    //TODO:
+    /*
+    1. Also track wrong attempts — if a user enters the wrong OTP 5 times, lock them out regardless of resend count. Increment attempts on every wrong entry and throw a 429 when it hits the limit.
+
+    2. Rate limit the endpoint itself as a first line of defence before even hitting the service logic — this stops bots from hammering the endpoint at the network level.
+    */
+
+    await otpRepo.save(otp);
+    const message = {
+      to: user.email,
+      subject: 'Your OTP Code for Email Verification',
+      from: ENV_CONFIG.MAILER.FROM,
+    };
+    await this.sendVerificationEmail(user, otpCode, message);
   };
 }

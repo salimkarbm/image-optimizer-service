@@ -5,6 +5,7 @@ export const MESSAGES = () => {
     FETCHED: (name: string) => `${name} fetched successfully`,
     DELETED: (name: string) => `${name} deleted successfully`,
     VERIFIED: (name: string) => `${name} verified successfully`,
+    RESENT: (name: string) => `${name} resent successfully`,
     LOGIN: `Logged in successful`,
     SIGN_UP: `Account signed up successfully`,
   };

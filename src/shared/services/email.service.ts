@@ -12,9 +12,13 @@ export class EmailService {
       // service: ENV_CONFIG.MAILER.NAME,
       host: ENV_CONFIG.MAILER.HOST,
       port: Number(ENV_CONFIG.MAILER.PORT),
+      secure: false,
       auth: {
         user: ENV_CONFIG.MAILER.USERNAME,
         pass: ENV_CONFIG.MAILER.PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false, // ← helps locally
       },
     });
     try {
