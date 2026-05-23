@@ -1,21 +1,21 @@
 import { EmailMessageOptions } from '../types';
 import nodemailer from 'nodemailer';
 import { convert } from 'html-to-text';
-import { ENV_CONFIG } from '../../config';
-import { SignupOtpTemplate } from '../templates';
+import { ENVIRONMENT } from '../../config';
+import { SignupOtpTemplate, WelcomeEmailTemplate } from '../templates';
 
 export class EmailService {
   async nodemailerConfig(
     options: EmailMessageOptions,
   ): Promise<nodemailer.SentMessageInfo> {
     const transporter: nodemailer.Transporter = nodemailer.createTransport({
-      // service: ENV_CONFIG.MAILER.NAME,
-      host: ENV_CONFIG.MAILER.HOST,
-      port: Number(ENV_CONFIG.MAILER.PORT),
+      // service: ENVIRONMENT.MAILER.NAME,
+      host: ENVIRONMENT.MAILER.HOST,
+      port: Number(ENVIRONMENT.MAILER.PORT),
       secure: false,
       auth: {
-        user: ENV_CONFIG.MAILER.USERNAME,
-        pass: ENV_CONFIG.MAILER.PASSWORD,
+        user: ENVIRONMENT.MAILER.USERNAME,
+        pass: ENVIRONMENT.MAILER.PASSWORD,
       },
       tls: {
         rejectUnauthorized: false, // ← helps locally
@@ -50,12 +50,12 @@ export class EmailService {
     const text: string = this.convertEmailToText(template);
     const msg: EmailMessageOptions = {
       to: options.to,
-      from: options.from || ENV_CONFIG.MAILER.FROM,
+      from: options.from || ENVIRONMENT.MAILER.FROM,
       subject: options.subject,
       html: template,
       text,
     };
-    switch (ENV_CONFIG.APP.env) {
+    switch (ENVIRONMENT.APP.env) {
       case 'production':
         return await this.nodemailerConfig(msg);
       case 'staging':
@@ -67,7 +67,7 @@ export class EmailService {
 
   async signupOtpEmail(
     message: EmailMessageOptions,
-    otp: number,
+    otp: string | number,
     firstName: string,
   ): Promise<nodemailer.SentMessageInfo> {
     const template: string = SignupOtpTemplate({
@@ -119,4 +119,20 @@ export class EmailService {
     );
     return false; // Explicit failure
   }
+
+  async sendWelcomeEmail(
+    message: EmailMessageOptions,
+    firstName: string,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const template: string = WelcomeEmailTemplate({
+      appName: ENVIRONMENT.APP.name,
+      firstName,
+      appTagline: ENVIRONMENT.APP.tagline,
+      teamName: ENVIRONMENT.APP.teamName,
+    });
+    return await this.sendEmail(message, template);
+  }
 }
+
+const emailService = new EmailService();
+export default emailService;

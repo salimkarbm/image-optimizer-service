@@ -151,11 +151,25 @@
 /**
  * @openapi
  * /v1/auth/login:
-    *   post:
+ *   post:
  *     summary: User login
- *     description: Logs in a user with email and password.
+ *     description: |
+ *       Logs in a user. Returns token differently based on client:
+ *       - **Web browsers**: Token is set as HTTP-only cookie automatically
+ *       - **Mobile apps**: Token is returned in response body (check `data.token`)
  *     tags:
  *       - Authentication
+ *     parameters:
+ *       - in: header
+ *         name: X-Client-Type
+ *         schema:
+ *           type: string
+ *           enum: [web, mobile]
+ *         description: |
+ *           Optional: Tell the server what client you're using.
+ *           - `mobile` → returns token in body
+ *           - `web` or omitted → uses HTTP-only cookie
+ *         example: "mobile"
  *     requestBody:
  *       required: true
  *       content:
@@ -175,7 +189,12 @@
  *                 example: "Password123!"
  *     responses:
  *       200:
- *         description: User logged in successfully.
+ *         description: User logged in successfully
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: HTTP-only cookie (web clients only)
  *         content:
  *           application/json:
  *             schema:
@@ -187,31 +206,163 @@
  *                 data:
  *                   type: object
  *                   properties:
- *                     id:
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                         firstName:
+ *                           type: string
+ *                         lastName:
+ *                           type: string
+ *                     token:
  *                       type: string
- *                       example: "64a7b8c9d1e2f3g4h5i6j7k8"
- *                     email:
+ *                       description: "JWT token (only returned for mobile clients or when X-Client-Type: mobile is sent)"
+ *                       example: "eyJhbGciOiJIUzI1NiIs..."
+ *                     tokenType:
  *                       type: string
- *                       example: "john.doe@example.com"
- *                     firstName:
+ *                       example: "Bearer"
+ *                     expiresIn:
+ *                       type: number
+ *                       example: 3600
+ */
+
+/**
+ * @openapi
+ * /v1/auth/refresh-token:
+ *   post:
+ *     summary: Refresh token
+ *     description: |
+ *       Refreshes the access token. Returns token differently based on client:
+ *       - **Web browsers**: Token is set as HTTP-only cookie automatically
+ *       - **Mobile apps**: Token is returned in response body (check `data.token`)
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: header
+ *         name: X-Client-Type
+ *         schema:
+ *           type: string
+ *           enum: [web, mobile]
+ *         description: |
+ *           Optional: Tell the server what client you're using.
+ *           - `mobile` → returns token in body
+ *           - `web` or omitted → uses HTTP-only cookie
+ *         example: "mobile"
+ *       - in: cookie
+ *         name: token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: HTTP-only refresh token cookie
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sessionId
+ *               - userId
+ *             properties:
+ *               sessionId:
+ *                 type: string
+ *                 example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *               userId:
+ *                 type: string
+ *                 example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: HTTP-only cookie (web clients only)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Token refreshed successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
  *                       type: string
- *                       example: "John"
- *                     lastName:
- *                       type: string
- *                       example: "Doe"
- *                     username:
- *                       type: string
- *                       example: "johndoe"
- *                     role:
- *                       type: string   
- *                       example: "user"
- *                     status:
- *                       type: string   
- *                       example: "pending"
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       500:
- *         $ref: '#/components/responses/ServerError'
+ *                       example: "User ID"
+ */
+
+/**
+ * @openapi
+ * /v1/auth/logout:
+ *   post:
+ *     summary: User logout
+ *     description: Logs out a user, revoking their token.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sessionId
+ *               - userId
+ *             properties:
+ *               sessionId:
+ *                 type: string
+ *                 example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *               userId:
+ *                 type: string
+ *                 example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *     responses:
+ *       200:
+ *         description: User logged out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User logged out successfully"
+ */
+
+/**
+ * @openapi
+ * /v1/auth/logout-all:
+ *   post:
+ *     summary: User logout all devices or sessions
+ *     description: Logs out a user, revoking their token.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sessionId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *     responses:
+ *       200:
+ *         description: User logged out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User logged out successfully"
  */

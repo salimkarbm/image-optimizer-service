@@ -8,7 +8,7 @@ export enum UserStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
-  PENDING = 'pending',
+  PENDING = 'pending_verification',
   DELETED = 'deleted',
   BANNED = 'banned',
   ARCHIVED = 'archived',

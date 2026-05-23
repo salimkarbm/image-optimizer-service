@@ -1,6 +1,6 @@
-import { sendEmail } from '../types';
+import { sendEmailOptions } from '../types';
 
-export const SignupOtpTemplate = (options: sendEmail): string => {
+export const SignupOtpTemplate = (options: sendEmailOptions): string => {
   return `
 <!DOCTYPE html>
 <html>
@@ -48,8 +48,4 @@ export const SignupOtpTemplate = (options: sendEmail): string => {
 </body>
 </html>
   `;
-};
-
-export const WelcomeEmailTemplate = (options: sendEmail): string => {
-  return `<h1>Welcome to Image Processor API</h1><p>Thank you for signing up, ${options.firstName}! We're excited to have you on board. If you have any questions or need assistance, feel free to reach out to our support team.</p><p>Best regards,<br/>The Image Processor Team</p>`;
 };

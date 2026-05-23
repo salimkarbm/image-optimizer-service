@@ -9,11 +9,11 @@ import {
   SelectQueryBuilder,
   QueryDeepPartialEntity,
 } from 'typeorm';
-import { PaginatedQuery } from '../../shared/types';
-import { dbTimeStamp } from '../../shared/utils';
-import BaseEntity from '../../repositories/base.entity';
-import AppError from '../../shared/utils/errors/appError';
-import { STATUS_CODE } from '../../shared/constants';
+import BaseEntity from '../repositories/base.entity';
+import { STATUS_CODE } from '../shared/constants';
+import AppError from '../shared/utils/errors/appError';
+import { dbTimeStamp } from '../shared/utils';
+import { PaginatedQuery } from '../shared/types';
 
 export default abstract class BaseRepository<T extends BaseEntity> {
   protected entity: Repository<T>;

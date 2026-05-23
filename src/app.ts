@@ -1,6 +1,7 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import 'reflect-metadata';
 import express, { Application, Request, Response, NextFunction } from 'express';
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -12,9 +13,11 @@ import AppError from './shared/utils/errors/appError';
 import { errorHandler } from './middlewares/errors/errorMiddleware';
 import router from './routes/v1';
 import { AppDataSource } from './config/typeorm.config';
-import { ENV_CONFIG } from './config';
-import { specConfig } from './docs/swagger';
+import { ENVIRONMENT } from './config';
+import { specConfig } from './docs/v1/swagger';
 import validateOpenApiSpec from './middlewares/doc/openapi.validation.middleware';
+import redisService from './shared/services/redis.service';
+import { getSecurityHeaders, getSwaggerOptions } from './shared/utils';
 
 dotenv.config();
 
@@ -22,36 +25,26 @@ dotenv.config();
 const app: Application = express();
 
 async function bootstrap() {
-  // const specs: swaggerJsdoc.Options = swaggerOptions;
+  // const specs: swaggerJsdoc.Options = swaggerOptions; // Swagger options from swagger-jsdoc
   const specs: swaggerJsdoc.Options = specConfig;
 
   // Security middleware
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
-        },
-      },
-      hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true,
-      },
-    }),
-  );
+  app.use(helmet(getSecurityHeaders));
+
+  let ALLOW_ORIGINS: string[] = [];
+
+  if (ENVIRONMENT.APP.env === 'development') {
+    ALLOW_ORIGINS = [
+      ...ALLOW_ORIGINS,
+      'http://localhost:8000',
+      'http://localhost:3001',
+    ];
+  }
+  ALLOW_ORIGINS = [...ALLOW_ORIGINS];
 
   const corsOptions: cors.CorsOptions = {
     origin(origin, callback) {
-      const allowedOrigins = [
-        'http://localhost:8000',
-        'http://localhost:3001',
-        'https://yourdomain.com',
-      ];
-      if (!origin || allowedOrigins.includes(origin))
+      if (!origin || ALLOW_ORIGINS.includes(origin))
         return callback(null, true);
       return callback(new Error('Not allowed by CORS'));
     },
@@ -80,12 +73,13 @@ async function bootstrap() {
       limit: '10mb',
     }),
   );
+  app.use(cookieParser());
   app.use(compression());
 
   // Enforce HTTPS in production
   const enforceHTTPS = (req: Request, res: Response, next: NextFunction) => {
     if (
-      process.env.NODE_ENV === 'production' &&
+      ENVIRONMENT.APP.env === 'production' &&
       req.header('x-forwarded-proto') !== 'https'
     ) {
       return res.redirect(`https://${req.header('host')}${req.url}`);
@@ -101,23 +95,10 @@ async function bootstrap() {
   app.use(
     '/api-docs',
     swaggerUi.serve,
-    swaggerUi.setup(specs, {
-      customCss: `
-                .swagger-ui .topbar { display: none }
-                .swagger-ui .info { margin: 20px 0 }
-                .swagger-ui .scheme-container { margin: 20px 0 }
-            `,
-      customSiteTitle: 'Image Processor API Documentation',
-      swaggerOptions: {
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        filter: true,
-        showCommonExtensions: true,
-      },
-    }),
+    swaggerUi.setup(specs, getSwaggerOptions),
   );
 
-  const PORT = ENV_CONFIG.APP.port || 3000;
+  const PORT = ENVIRONMENT.APP.port || 3000;
 
   // Define index route
   app.get('/', async (req: Request, res: Response) => {
@@ -138,15 +119,23 @@ async function bootstrap() {
   app.use(errorHandler);
 
   // Listen for server
-  AppDataSource.initialize().then(() => {
-    app.listen(PORT, () =>
-      console.log(
-        `🚀 Database connected successfully
-                🚀 API Server running on port ${PORT}
-                📚 API Documentation available at: http://localhost:${PORT}/api-docs`,
-      ),
-    );
-  });
+  AppDataSource.initialize()
+    .then(async () => {
+      await redisService.ping();
+      app.listen(PORT, () => {
+        console.log(
+          `
+          🚀 Database connected successfully
+          🚀 API Server running on port ${PORT}
+          📚 API Documentation available at: http://localhost:${PORT}/api-docs
+          `,
+        );
+      });
+    })
+    .catch((err) => {
+      console.error('❌ Database connection failed:', err);
+      process.exit(1);
+    });
 }
 
 bootstrap().catch((err) => {
@@ -155,12 +144,14 @@ bootstrap().catch((err) => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
+  await AppDataSource.destroy();
   console.log('SIGTERM received. Shutting down gracefully...');
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
+  await AppDataSource.destroy();
   console.log('SIGINT received. Shutting down gracefully...');
   process.exit(0);
 });

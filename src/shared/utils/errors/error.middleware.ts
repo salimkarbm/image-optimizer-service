@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { ENV_CONFIG } from '../../../config';
+import { ENVIRONMENT } from '../../../config';
 import AppError from './appError';
 
 export const sendErrorDev = (err: AppError, res: Response) => {
@@ -36,10 +36,10 @@ export const errorHandler = (
   }
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
-  if (ENV_CONFIG.APP.env === 'development') {
+  if (ENVIRONMENT.APP.env === 'development') {
     sendErrorDev(err, res);
   }
-  if (ENV_CONFIG.APP.env === 'production') {
+  if (ENVIRONMENT.APP.env === 'production') {
     sendErrorProd(err, res);
     const error = { ...err };
     if (error.name === 'ExpiredCodeException') {

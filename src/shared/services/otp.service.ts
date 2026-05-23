@@ -1,17 +1,26 @@
 import CryptoJS from 'crypto-js';
 import * as crypto from 'crypto';
-import { ENV_CONFIG } from '../../config';
+import { ENVIRONMENT } from '../../config';
 import { STATUS_CODE } from '../constants';
 import AppError from '../utils/errors/appError';
 export class OTPService {
   private readonly tenMinutesInMs: number = 10 * 60 * 1000;
   private readonly oneMinuteInMs: number = 60 * 1000;
   private readonly otpExpiry: number = this.tenMinutesInMs;
-  private readonly secretKey: string = ENV_CONFIG.APP.ENCRYPTION_KEY;
+  private readonly SECRET_KEY: string;
   private readonly MAX_OTP_GENERATION_ATTEMPTS = 3;
-  private readonly fiveMinutesInMs: number = 5 * 60 * 1000;
+  private readonly FIVE_MINUTE_IN_MS: number = 5 * 60 * 1000;
   private readonly OTP_LENGTH = 6;
   private readonly OTP_GENERATION_INTERVAL = this.oneMinuteInMs;
+  private readonly MAX_RESET_ATTEMPTS = 3;
+  private readonly OTP_VALIDITY_MINUTES = 10;
+  private readonly OTP_COOL_DOWN_MINUTES = 5;
+  private readonly MAX_OTP_ATTEMPTS = 3;
+  private readonly ONE_MINUTE_IN_MS = 60 * 1000;
+
+  constructor() {
+    this.SECRET_KEY = ENVIRONMENT.OTP.ENCRYPTION_KEY;
+  }
 
   generate(): string {
     try {
@@ -34,7 +43,7 @@ export class OTPService {
   strongHash(otp: string): string {
     try {
       // HMAC uses your secretKey so rainbow tables won't work
-      return CryptoJS.HmacSHA256(otp.trim(), this.secretKey.trim()).toString(
+      return CryptoJS.HmacSHA256(otp.trim(), this.SECRET_KEY.trim()).toString(
         CryptoJS.enc.Hex,
       );
     } catch (error) {
@@ -50,7 +59,7 @@ export class OTPService {
     try {
       const computedHash = CryptoJS.HmacSHA256(
         plainOtp.trim(),
-        this.secretKey.trim(),
+        this.SECRET_KEY.trim(),
       ).toString(CryptoJS.enc.Hex);
 
       return computedHash === hashedOtp.trim();
@@ -94,7 +103,7 @@ export class OTPService {
       const data = `${otp}|${email}|${timestamp}`;
       const encryptedData = CryptoJS.AES.encrypt(
         data,
-        this.secretKey,
+        this.SECRET_KEY,
       ).toString();
       return encryptedData;
     } catch (error) {
@@ -113,7 +122,10 @@ export class OTPService {
   ): boolean {
     try {
       // Decrypt the OTP data
-      const decryptedBytes = CryptoJS.AES.decrypt(encryptedOtp, this.secretKey);
+      const decryptedBytes = CryptoJS.AES.decrypt(
+        encryptedOtp,
+        this.SECRET_KEY,
+      );
       const decryptedData = decryptedBytes.toString(CryptoJS.enc.Utf8);
 
       // Split the data
@@ -176,8 +188,10 @@ export class OTPService {
     }
     return null;
   }
-
-  checkMaxResendAttempts(resendCount: number): boolean {
-    return resendCount >= this.MAX_OTP_GENERATION_ATTEMPTS;
+  checkMaxResendAttempts(resendCount: number | null): boolean {
+    const attempts = resendCount ?? 0; // null/undefined -> 0
+    return attempts >= this.MAX_OTP_GENERATION_ATTEMPTS;
   }
 }
+const otpService = new OTPService();
+export default otpService;

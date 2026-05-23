@@ -1,76 +1,97 @@
-import { Request } from 'express';
-import UserRepository from '../repositories/user/user.repository';
-import { AppDataSource } from '../config/typeorm.config';
+import { CookieOptions, Request, Response } from 'express';
+import userRepo from '../repositories/user/user.repository';
 import AppError from '../shared/utils/errors/appError';
 import { ERROR_MESSAGE, STATUS_CODE } from '../shared/constants';
-import { EmailService } from '../shared/services/email.service';
-import { OTPService } from '../shared/services/otp.service';
-import { ENV_CONFIG } from '../config';
+import emailService from '../shared/services/email.service';
+import otpService from '../shared/services/otp.service';
+import { ENVIRONMENT } from '../config';
 import User from '../users/entities/user.entity';
-import OTPRepository from '../repositories/user/otp.repository';
-import { otpType } from '../shared/enums/otp.enum';
+import otpRepo from '../repositories/user/otp.repository';
+import { OTP_TYPE } from '../shared/enums/otp.enum';
+import jwtService from '../shared/services/jwt.service';
+import Session from '../users/entities/session.entity';
+import sessionRepo from '../repositories/user/session.repository';
+import { addMinutes, addSeconds, differenceInMinutes } from 'date-fns';
+import { CreateSession } from '../shared/types/users/session.type';
+import { IsNull } from 'typeorm';
+import { EmailMessageOptions } from '../shared/types';
 
-const userRepo = new UserRepository(AppDataSource.manager);
-const otpRepo = new OTPRepository(AppDataSource.manager);
-const emailService = new EmailService();
-const otpService = new OTPService();
+export class AuthService {
+  private readonly RESET_TOKEN_VALIDITY_MINUTES = 60;
+  private readonly RESET_COOL_DOWN_MINUTES = 15;
+  private readonly SESSION_EXPIRY_DAYS = 7;
+  private readonly REFRESH_TOKEN_EXPIRY_DAYS = 30;
+  private readonly MAX_CONCURRENT_SESSIONS = 3;
+  private readonly UNVERIFIED_USER_EXPIRY_HOURS = 24;
+  private readonly MAX_LOGIN_ATTEMPTS = 5;
+  private readonly LOGIN_COOL_DOWN_MINUTES = 15;
+  private readonly OTP_COOL_DOWN_MINUTES = 5;
+  private readonly MAX_OTP_ATTEMPTS = 3;
 
-export class UserService {
+  constructor() {}
+
   private createOtp = async (
     identifier: string,
-    type: otpType,
+    type: OTP_TYPE,
   ): Promise<string> => {
+    const otpExist = otpRepo.findOne({
+      where: {
+        identifier,
+        type,
+        isUsed: false,
+      },
+    });
     const otpCode = otpService.generate();
     const hashedOtp = otpService.strongHash(otpCode);
     const otp = otpRepo.create({
       identifier,
       type,
       code: hashedOtp,
-      expiredAt: otpService.calculateExpiration(ENV_CONFIG.OTP.EXPIRY_TIME),
+      expiredAt: otpService.calculateExpiration(ENVIRONMENT.OTP.EXPIRY_TIME),
       nextResendAt: otpService.nextResendTime(1), // set next resend time to 1 minute later to prevent spamming
     });
     await otpRepo.save(otp);
     return otpCode;
   };
 
-  private sendVerificationEmail = async (
-    user: User,
-    otp: string,
-    message: any,
-  ) => {
-    try {
-      const sendEmail = await emailService.signupOtpEmail(
-        message,
-        parseInt(otp, 10),
-        user.firstName,
-      );
-      // retry ONLY if sending failed
-      if (sendEmail.rejected.length > 0) {
-        await emailService.retryEmail(
-          message,
-          emailService.signupOtpEmail.bind(emailService),
-        );
-      }
-      return sendEmail;
-    } catch (error) {
-      // retry ONLY when email sending throws error
-      // await emailService.retryEmail(message, sendEmail);
+  // private sendVerificationEmail = async (
+  //   user: User,
+  //   otp: string,
+  //   message: any,
+  // ) => {
+  //   try {
+  //     const sendEmail = await emailService.signupOtpEmail(
+  //       message,
+  //       otp,
+  //       user.firstName,
+  //     );
+  //     // retry ONLY if sending failed
+  //     if (sendEmail.rejected.length > 0) {
+  //       await emailService.retryEmail(
+  //         message,
+  //         emailService.signupOtpEmail.bind(emailService),
+  //       );
+  //     }
+  //     return sendEmail;
+  //   } catch (error) {
+  //     // retry ONLY when email sending throws error
+  //     // await emailService.retryEmail(message, sendEmail);
 
-      // optional: remove user if email completely fails
-      await userRepo.delete({
-        id: user.id,
-      });
+  //     // optional: remove user if email completely fails
+  //     await userRepo.delete({
+  //       id: user.id,
+  //     });
 
-      await otpRepo.delete({
-        identifier: user.email,
-      });
+  //     await otpRepo.delete({
+  //       identifier: user.email,
+  //     });
 
-      throw new AppError(
-        'Failed to send verification email',
-        STATUS_CODE.INTERNAL_SERVER_ERROR,
-      );
-    }
-  };
+  //     throw new AppError(
+  //       'Failed to send verification email',
+  //       STATUS_CODE.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // };
 
   signUp = async (req: Request): Promise<User> => {
     const userExist = await userRepo.findOne({
@@ -82,7 +103,10 @@ export class UserService {
         STATUS_CODE.NOT_FOUND,
       );
     }
-    const otp = await this.createOtp(req.body.email, otpType.email);
+    const otp = await this.createOtp(
+      req.body.email,
+      OTP_TYPE.EMAIL_VERIFICATION,
+    );
     const user = userRepo.create({
       ...req.body,
     });
@@ -91,10 +115,10 @@ export class UserService {
     const message = {
       to: user.email,
       subject: 'Welcome to Image Processor API',
-      from: ENV_CONFIG.MAILER.FROM,
+      from: ENVIRONMENT.MAILER.FROM,
     };
     //TODO: move this to a background job to avoid blocking the main thread, and implement retry logic for email sending, if email sending fails, delete the user and otp record to maintain data integrity
-    await this.sendVerificationEmail(user, otp, message);
+    await await emailService.signupOtpEmail(message, otp, user.firstName);
     return user;
   };
 
@@ -103,7 +127,8 @@ export class UserService {
     const otpRecord = await otpRepo.findOne({
       where: {
         identifier: email,
-        type: otpType.email,
+        type: OTP_TYPE.EMAIL_VERIFICATION,
+        isUsed: false,
       },
     });
     if (!otpRecord) {
@@ -112,10 +137,6 @@ export class UserService {
     if (otpService.isExpired(otpRecord.expiredAt)) {
       throw new AppError('OTP has expired', STATUS_CODE.BAD_REQUEST);
     }
-    const isValidOtp = otpService.verifyStrongHashed(otp, otpRecord.code);
-    if (!isValidOtp) {
-      throw new AppError('Invalid OTP code', STATUS_CODE.BAD_REQUEST);
-    }
     const user = await userRepo.findOne({
       where: { email },
     });
@@ -125,39 +146,77 @@ export class UserService {
         STATUS_CODE.NOT_FOUND,
       );
     }
-    user.isVerified = true;
-    await userRepo.save(user);
-    await otpRepo.delete({
-      id: otpRecord.id,
-    });
-    //TODO: send confirmation email for successful verification
+
+    const now = new Date();
+
+    const minutesSinceLastAttempt = differenceInMinutes(
+      now,
+      otpRecord.attempts,
+    );
+
+    const hasExceededAttempts = otpRecord.attempts >= this.MAX_OTP_ATTEMPTS;
+
+    const isStillCoolingDown =
+      minutesSinceLastAttempt < this.OTP_COOL_DOWN_MINUTES;
+
+    if (hasExceededAttempts && isStillCoolingDown) {
+      const remainingCooldownMinutes =
+        this.OTP_COOL_DOWN_MINUTES - minutesSinceLastAttempt;
+
+      throw new AppError(
+        `Too many OTP verification attempts. Please try again in ${remainingCooldownMinutes} minute(s).`,
+        STATUS_CODE.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const isValidOtp = otpService.verifyStrongHashed(otp, otpRecord.code);
+    if (isValidOtp) {
+      user.emailVerifiedAt = new Date();
+      await userRepo.save(user);
+      await otpRepo.delete({
+        id: otpRecord.id,
+      });
+
+      const message = {
+        to: user.email,
+        subject: 'Welcome to Image Processor API',
+        from: ENVIRONMENT.MAILER.FROM,
+      };
+      //TODO: move this to a background job to avoid blocking the main thread, and implement retry logic for email sending, if email sending fails, delete the user and otp record to maintain data integrity
+      await emailService.sendWelcomeEmail(message, user.firstName);
+      return;
+    }
+    // Increment failed OTP attempts
+    await otpRepo.findOneAndUpdate(
+      { id: user.id },
+      {
+        attempts: (otpRecord.attempts || 0) + 1,
+      },
+    );
+    throw new AppError('Invalid OTP', STATUS_CODE.BAD_REQUEST);
   };
 
   resendOTP = async (req: Request): Promise<void> => {
     const { email } = req.body;
-    const user = await userRepo.findOne({
-      where: { email },
-    });
-    if (!user) {
-      throw new AppError(
-        'User not found for this email',
-        STATUS_CODE.NOT_FOUND,
-      );
-    }
-    if (user.isVerified) {
-      throw new AppError('Email is already verified', STATUS_CODE.BAD_REQUEST);
-    }
 
     const otp = await otpRepo.findOne({
-      where: { identifier: email, isUsed: false },
+      where: {
+        identifier: email,
+        type: OTP_TYPE.EMAIL_VERIFICATION,
+        isUsed: false,
+      },
       order: { createdAt: 'DESC' },
     });
 
     if (!otp) {
-      throw new AppError(
-        'No active OTP found. Please request a new one.',
-        STATUS_CODE.NOT_FOUND,
-      );
+      // Generate new OTP
+      const otpCode = await this.createOtp(email, OTP_TYPE.EMAIL_VERIFICATION);
+      const message = {
+        to: email,
+        subject: 'Your OTP Code for Email Verification',
+        from: ENVIRONMENT.MAILER.FROM,
+      };
+      return await emailService.signupOtpEmail(message, otpCode, email);
     }
 
     // Check coolDown
@@ -169,7 +228,7 @@ export class UserService {
       );
     }
 
-    // Check max resends
+    // Check max resend
     if (otpService.checkMaxResendAttempts(otp.resendCount)) {
       throw new AppError(
         'Maximum resend attempts reached. Please request a new OTP after 24 hours.',
@@ -179,25 +238,279 @@ export class UserService {
 
     // Generate new OTP
     const coolDown = otpService.coolDownSeconds(otp.resendCount);
-    const nextResendAt = new Date(Date.now() + coolDown * 1000);
-    const otpCode = await this.createOtp(email, otpType.email);
+    const otpCode = await this.createOtp(email, OTP_TYPE.EMAIL_VERIFICATION);
     otp.expiredAt = otpService.expiryTime(); // 10 mins
     otp.resendCount = otp.resendCount + 1;
-    otp.nextResendAt = nextResendAt;
+    otp.nextResendAt = new Date(Date.now() + coolDown * 1000);
 
     //TODO:
     /*
-    1. Also track wrong attempts — if a user enters the wrong OTP 5 times, lock them out regardless of resend count. Increment attempts on every wrong entry and throw a 429 when it hits the limit.
-
-    2. Rate limit the endpoint itself as a first line of defence before even hitting the service logic — this stops bots from hammering the endpoint at the network level.
+    1. Rate limit the endpoint itself as a first line of defence before even hitting the service logic — this stops bots from hammering the endpoint at the network level.
     */
-
     await otpRepo.save(otp);
     const message = {
-      to: user.email,
+      to: req.body.email,
       subject: 'Your OTP Code for Email Verification',
-      from: ENV_CONFIG.MAILER.FROM,
+      from: ENVIRONMENT.MAILER.FROM,
     };
-    await this.sendVerificationEmail(user, otpCode, message);
+    await emailService.signupOtpEmail(message, otpCode, req.body.email);
+  };
+
+  private sendAuthCookie = (res: Response, token: string): void => {
+    const cookieOptions: CookieOptions = {
+      httpOnly: true,
+      maxAge: ENVIRONMENT.JWT.accessTokenExpiryInSeconds,
+      sameSite: 'lax', // CSRF protection
+    };
+
+    if (ENVIRONMENT.APP.env === 'production') {
+      cookieOptions.secure = true; // HTTPS only in prod
+    }
+    res.cookie('jwt', token, cookieOptions);
+  };
+
+  private async createSession(session: CreateSession): Promise<Session> {
+    const newSession = sessionRepo.create(session);
+    return await sessionRepo.save(newSession);
+  }
+
+  private async validateUser(req: Request): Promise<Partial<User> | null> {
+    const user = await userRepo.findOne({
+      where: { email: req.body.email },
+    });
+    if (!user) return null;
+    // Check login attempts and cool down
+    const loginAttempts = user?.loginAttempts || {
+      count: 0,
+      lastAttempt: new Date(0),
+    };
+
+    const now = new Date();
+
+    const minutesSinceLastAttempt = differenceInMinutes(
+      now,
+      loginAttempts.lastAttempt,
+    );
+
+    const hasExceededAttempts = loginAttempts.count >= this.MAX_LOGIN_ATTEMPTS;
+
+    const isStillCoolingDown =
+      minutesSinceLastAttempt < this.LOGIN_COOL_DOWN_MINUTES;
+
+    if (hasExceededAttempts && isStillCoolingDown) {
+      const remainingCooldownMinutes =
+        this.LOGIN_COOL_DOWN_MINUTES - minutesSinceLastAttempt;
+
+      throw new AppError(
+        `Too many login attempts. Please try again in ${remainingCooldownMinutes} minute(s).`,
+        STATUS_CODE.TOO_MANY_REQUESTS,
+      );
+    }
+
+    if (user && (await user.validatePassword(req.body.password))) {
+      // Reset login attempts on successful login
+      await userRepo.findOneAndUpdate(
+        { id: user.id },
+        {
+          loginAttempts: { count: 0, lastAttempt: new Date() },
+        },
+      );
+      return user;
+    }
+    // Increment failed login attempts
+    await userRepo.findOneAndUpdate(
+      { id: user.id },
+      {
+        loginAttempts: {
+          count: (loginAttempts.count || 0) + 1,
+          lastAttempt: new Date(),
+        },
+      },
+    );
+
+    return null;
+  }
+
+  private async validateEmail(email: string): Promise<Partial<User> | null> {
+    const user = await userRepo.findOne({ where: { email } });
+    if (!user) return null;
+    return user;
+  }
+
+  login = async (
+    req: Request,
+  ): Promise<{
+    accessToken?: string;
+    refreshToken?: string;
+    message?: string;
+    tokenExpiresInSeconds?: number;
+    refreshExpiresInSeconds?: number;
+    requiresVerification?: boolean;
+    userVerificationExpiresAt?: Date;
+    session?: string;
+    user: Partial<User>;
+  }> => {
+    const validUser = await this.validateUser(req);
+    if (!validUser) {
+      throw new AppError('Invalid credentials', STATUS_CODE.NOT_FOUND);
+    }
+    if (!validUser.emailVerifiedAt) {
+      const registrationTime = validUser.createdAt || new Date();
+      const userVerificationExpiryTime = addMinutes(
+        registrationTime,
+        this.UNVERIFIED_USER_EXPIRY_HOURS * 60,
+      );
+      const now = new Date();
+      if (now > userVerificationExpiryTime) {
+        // Delete unverified user after 24 hours
+        await userRepo.delete({ id: validUser.id });
+        throw new AppError(
+          'Registration expired. Please register again.',
+          STATUS_CODE.UNAUTHORIZED,
+        );
+      }
+      // Resend verification email if user tries to login
+      const otp = await this.createOtp(
+        validUser?.email as string,
+        OTP_TYPE.EMAIL_VERIFICATION,
+      );
+      const message = {
+        to: validUser?.email,
+        subject: 'Welcome to Image Processor API',
+        from: ENVIRONMENT?.MAILER.FROM,
+      };
+      await emailService.signupOtpEmail(
+        message as EmailMessageOptions,
+        otp,
+        validUser.firstName as string,
+      );
+      return {
+        message: 'Please check your email to verify your account',
+        user: {
+          id: validUser.id,
+          email: validUser.email,
+          emailVerifiedAt: validUser.emailVerifiedAt,
+          firstName: validUser.firstName,
+          lastName: validUser.lastName,
+        },
+      };
+    }
+    const token = await jwtService.generateToken({ id: validUser.id });
+    const refresh = await jwtService.generateToken(
+      { sub: validUser.id },
+      ENVIRONMENT.JWT.refreshTokenExpiryInSeconds,
+    );
+    // create session
+    const session = await this.createSession({
+      userId: validUser.id as string,
+      userAgent: req.headers['user-agent'] || ('' as string),
+      ipAddress: req.ip || req.socket.remoteAddress || ('' as string),
+      deviceName: req.headers['user-agent'] || ('' as string),
+      lastSeenAt: new Date(),
+      refreshToken: refresh,
+      expiresAt: addSeconds(
+        new Date(),
+        ENVIRONMENT.JWT.refreshTokenExpiryInSeconds,
+      ),
+      //expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_TTL_DAYS);
+    });
+
+    return {
+      accessToken: token,
+      tokenExpiresInSeconds: ENVIRONMENT.JWT.accessTokenExpiryInSeconds,
+      refreshToken: refresh,
+      refreshExpiresInSeconds: ENVIRONMENT.JWT.refreshTokenExpiryInSeconds,
+      session: session.id,
+      user: {
+        id: validUser.id,
+        email: validUser.email,
+        emailVerifiedAt: validUser.emailVerifiedAt,
+        firstName: validUser.firstName,
+        lastName: validUser.lastName,
+      },
+    };
+  };
+
+  refreshHandler = async (req: Request) => {
+    const { refreshToken } = req.cookies; // from HttpOnly cookie
+    if (!refreshToken)
+      throw new AppError('Missing refresh token', STATUS_CODE.UNAUTHORIZED);
+
+    const session = await sessionRepo.findOne({
+      where: { id: req.body.sessionId, userId: req.body.userId },
+    });
+    if (!session)
+      throw new AppError('Invalid refresh token', STATUS_CODE.UNAUTHORIZED);
+
+    const validSession = await session.validateRefreshToken(refreshToken);
+    if (!validSession)
+      throw new AppError('Invalid refresh token', STATUS_CODE.UNAUTHORIZED);
+
+    const isExpired = session.expiresAt < new Date();
+    if (isExpired)
+      throw new AppError(
+        'Refresh token expired! Please login again',
+        STATUS_CODE.UNAUTHORIZED,
+      );
+
+    const isRevoke = session.revokedAt !== null;
+    if (isRevoke)
+      throw new AppError(
+        'Refresh token revoked! Please login again',
+        STATUS_CODE.UNAUTHORIZED,
+      );
+
+    // Rotation: Revoke old, issue new. Prevents replay attacks
+    await sessionRepo.findOneAndUpdate(
+      { id: session.id },
+      { revokedAt: new Date() },
+    );
+
+    const newRefreshToken = await jwtService.generateToken(
+      { sub: session.userId },
+      ENVIRONMENT.JWT.refreshTokenExpiryInSeconds,
+    );
+    const accessToken = await jwtService.generateToken(
+      { id: session.userId },
+      ENVIRONMENT.JWT.accessTokenExpiryInSeconds,
+    );
+
+    // Update last_seen_at
+    await sessionRepo.findOneAndUpdate(
+      { id: session.id },
+      { lastSeenAt: new Date(), refreshToken: newRefreshToken },
+    );
+    return {
+      accessToken,
+      userId: session.userId,
+      session: session.id,
+      tokenExpiresInSeconds: ENVIRONMENT.JWT.accessTokenExpiryInSeconds,
+      refreshToken: newRefreshToken,
+      refreshExpiresInSeconds: ENVIRONMENT.JWT.refreshTokenExpiryInSeconds,
+    };
+  };
+
+  logoutHandler = async (req: Request) => {
+    const sessions = await sessionRepo.findOne({
+      where: {
+        userId: req.body.userId,
+        id: req.body.sessionId,
+        revokedAt: IsNull(),
+      },
+    });
+    if (sessions?.revokedAt === null) {
+      return await sessionRepo.findOneAndUpdate(
+        { id: sessions?.id, userId: req.body.userId },
+        { revokedAt: new Date() },
+      );
+    }
+    throw new AppError('Session not found', STATUS_CODE.NOT_FOUND);
+  };
+
+  logoutAllHandler = async (req: Request) => {
+    return await sessionRepo.findOneAndUpdate(
+      { userId: req.body.userId, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    );
   };
 }

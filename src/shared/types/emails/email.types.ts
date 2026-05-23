@@ -7,12 +7,16 @@ export type EmailMessageOptions = {
   attachments?: any;
 };
 
-export type sendEmail = {
-  firstName: string;
+export type sendEmailOptions = {
+  firstName?: string;
   email?: string;
   otp?: string;
   expiryTime?: number;
   appName?: string;
   appTagline?: string;
   teamName?: string;
+  dashboardUrl?: string;
+  helpUrl?: string;
+  companyAddress?: string;
+  unsubscribeUrl?: string;
 };

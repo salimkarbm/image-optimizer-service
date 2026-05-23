@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import SwaggerParser from '@apidevtools/swagger-parser';
-import { specConfig } from '../../docs/swagger';
+import { specConfig } from '../../docs/v1/swagger';
 
 export default async function validateOpenApiSpec(
   req: Request,

@@ -1,20 +1,21 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import dotenv from 'dotenv';
-import { ENV_CONFIG } from '.';
+import { ENVIRONMENT } from '.';
 import { AuditLog } from '../audit/entities/audit.entity';
 import User from '../users/entities/user.entity';
 import { join } from 'path';
 import OTP from '../users/entities/otp.entity';
+import Session from '../users/entities/session.entity';
 
 dotenv.config();
 export const makeDataSource = (): DataSource => {
-  const isProduction = ENV_CONFIG.APP.env === 'production';
-  const isDevelopment = ENV_CONFIG.APP.env === 'development';
+  const isProduction = ENVIRONMENT.APP.env === 'production';
+  const isDevelopment = ENVIRONMENT.APP.env === 'development';
 
   const common: Partial<DataSourceOptions> = {
     type: 'postgres',
     schema: 'public',
-    entities: [User, AuditLog, OTP],
+    entities: [User, AuditLog, OTP, Session],
     migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
     migrationsTableName: 'migrations',
     migrationsRun: false,
@@ -52,11 +53,11 @@ export const makeDataSource = (): DataSource => {
   const options: DataSourceOptions = {
     ...common,
     type: 'postgres',
-    host: ENV_CONFIG.DATABASE.HOST,
-    port: ENV_CONFIG.DATABASE.PORT,
-    username: ENV_CONFIG.DATABASE.USERNAME,
-    password: ENV_CONFIG.DATABASE.PASSWORD,
-    database: ENV_CONFIG.DATABASE.NAME,
+    host: ENVIRONMENT.DATABASE.HOST,
+    port: ENVIRONMENT.DATABASE.PORT,
+    username: ENVIRONMENT.DATABASE.USERNAME,
+    password: ENVIRONMENT.DATABASE.PASSWORD,
+    database: ENVIRONMENT.DATABASE.NAME,
     ssl: isProduction,
     extra: {
       ssl: isProduction ? { rejectUnauthorized: true } : false,

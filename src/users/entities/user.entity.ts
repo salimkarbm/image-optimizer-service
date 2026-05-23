@@ -74,36 +74,63 @@ export default class User extends BaseEntity {
   })
   role!: UserRole;
 
-  @Column({ default: false })
-  isVerified!: boolean;
-
-  @Column({ default: false })
-  isBlocked!: boolean;
+  @Column({ type: 'timestamptz', nullable: true })
+  emailVerifiedAt?: Date | null;
 
   @Column({ nullable: true })
   suspensionReason!: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   lastLoginAt!: Date;
+
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+  })
+  loginAttempts?: LoginAttempt;
+
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.PENDING,
+  })
+  status!: UserStatus;
+
+  @Column({ nullable: true })
+  avatar?: string;
+
+  @Column({ nullable: true })
+  termsVersion!: string;
+
+  @Column({
+    type: 'timestamptz',
+    nullable: true,
+  })
+  termsAcceptedAt!: Date | null;
+
+  @Column({ nullable: true })
+  termsAcceptedIp!: string;
+
+  @DeleteDateColumn()
+  deletedAt!: Date | null;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
+
+  // @Column({ default: false })
+  // isVerified!: boolean;
+
+  // @Column({ default: false })
+  // isBlocked!: boolean;
 
   // @Column({
   //   type: 'timestamp',
   //   nullable: true,
   // })
-  // lastLogin!: Date;
-
-  // @Column({
-  //   type: 'enum',
-  //   enum: UserStatus,
-  //   default: UserStatus.PENDING,
-  // })
-  // status!: UserStatus;
-
-  // @Column({
-  //   type: 'jsonb',
-  //   nullable: true,
-  // })
-  // loginAttempts?: LoginAttempt;
+  // failedLogin!: Date;
 
   // @Column({
   //   type: 'jsonb',
@@ -162,41 +189,17 @@ export default class User extends BaseEntity {
   //   createdAt: Date;
   // }[];
 
-  @Column({ nullable: true })
-  avatar?: string;
+  // @Column({
+  //   type: 'varchar',
+  //   nullable: true,
+  // })
+  // platform!: PlatformUser | null;
 
-  @Column({ nullable: true })
-  termsVersion!: string;
-
-  @Column({
-    type: 'timestamptz',
-    nullable: true,
-  })
-  termsAcceptedAt!: Date | null;
-
-  @Column({ nullable: true })
-  termsAcceptedIp!: string;
-
-  @Column({
-    type: 'varchar',
-    nullable: true,
-  })
-  platform!: PlatformUser | null;
-
-  @Column({
-    type: 'varchar',
-    nullable: true,
-  })
-  deviceType!: UserDeviceType | null;
-
-  @DeleteDateColumn()
-  deletedAt!: Date | null;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  // @Column({
+  //   type: 'varchar',
+  //   nullable: true,
+  // })
+  // deviceType!: UserDeviceType | null;
 
   @BeforeInsert()
   @BeforeUpdate()

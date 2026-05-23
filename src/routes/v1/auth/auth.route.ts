@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { signUp, verifyEmail } from '../../../auth/controllers';
 import { validateInputWithZod } from '../../../middlewares';
 import { signUpSchema, signUpSchemaRules } from '../../../auth/validations';
 import {
@@ -10,6 +9,23 @@ import {
   resendOtpSchema,
   resendOtpSchemaRules,
 } from '../../../auth/validations/resend-otp.validation';
+import {
+  login,
+  logout,
+  logoutAll,
+  refreshToken,
+  resendOtp,
+  signUp,
+  verifyEmail,
+} from '../../../controllers';
+import {
+  loginSchema,
+  loginSchemaRules,
+  logoutSchema,
+  logoutSchemaRules,
+  refreshSchema,
+  refreshSchemaRules,
+} from '../../../auth/validations/login.validation';
 
 const router = Router();
 
@@ -28,7 +44,30 @@ router.post(
 router.post(
   '/auth/resend-otp',
   validateInputWithZod(resendOtpSchema, resendOtpSchemaRules),
-  verifyEmail,
+  resendOtp,
+);
+router.post(
+  '/auth/login',
+  validateInputWithZod(loginSchema, loginSchemaRules),
+  login,
+);
+
+router.post(
+  '/auth/refresh-token',
+  validateInputWithZod(refreshSchema, refreshSchemaRules),
+  refreshToken,
+);
+
+router.post(
+  '/auth/logout',
+  validateInputWithZod(refreshSchema, refreshSchemaRules),
+  logout,
+);
+
+router.post(
+  '/auth/logout-all',
+  validateInputWithZod(logoutSchema, logoutSchemaRules),
+  logoutAll,
 );
 
 export default router;

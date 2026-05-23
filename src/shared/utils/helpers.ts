@@ -4,17 +4,19 @@ import { PaginatedResponse } from '../types/paginate.type';
 import { ErrorResponse } from '../types';
 import { isAfter, parseISO } from 'date-fns';
 import { DateTime } from 'luxon';
+import { ENVIRONMENT } from '../../config';
+import { Request } from 'express';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // GCM recommends 12 bytes
 const AUTH_TAG_LENGTH = 16;
-const KEY_HEX = process.env.ENCRYPTION_KEY!; // Must be 32 bytes (64 hex chars) for AES-256
+const KEY_HEX = ENVIRONMENT.OTP.ENCRYPTION_KEY!; // Must be 32 bytes (64 hex chars) for AES-256
 
 // This creates a Uint8Array<ArrayBuffer> which TS accepts
 const KEY_BYTES = new Uint8Array(Buffer.from(KEY_HEX, 'hex'));
 const KEY = crypto.createSecretKey(KEY_BYTES) as CipherKey;
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
+const ENCRYPTION_KEY = ENVIRONMENT.OTP.ENCRYPTION_KEY
   ? KEY
   : crypto.randomBytes(32);
 
@@ -130,4 +132,52 @@ export const getLocalTime = (
 ): string | null => {
   const localTime = DateTime.fromJSDate(date).setZone(zone).toISO();
   return localTime;
+};
+
+export const getSwaggerOptions = {
+  customCss: `
+                .swagger-ui .topbar { display: none }
+                .swagger-ui .info { margin: 20px 0 }
+                .swagger-ui .scheme-container { margin: 20px 0 }
+            `,
+  customSiteTitle: 'Image Processor API Documentation',
+  swaggerOptions: {
+    requestInterceptor: (
+      req: Request & { credentials?: string; headers?: Record<string, string> },
+    ) => {
+      req.credentials = 'include';
+      return req;
+    },
+    responseInterceptor: (
+      res: Response & { headers?: Record<string, string> },
+    ) => {
+      // Capture cookies from responses
+      const setCookie = res.headers?.['set-cookie'];
+      if (setCookie) {
+        console.log('Cookies received:', setCookie);
+      }
+      return res;
+    },
+    // persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showCommonExtensions: true,
+    withCredentials: true,
+  },
+};
+
+export const getSecurityHeaders = {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
 };

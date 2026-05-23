@@ -1,5 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { otpType } from '../../shared/enums/otp.enum';
+import { OTP_TYPE } from '../../shared/enums/otp.enum';
 import BaseEntity from '../../repositories/base.entity';
 
 @Entity({ name: 'otp', schema: 'public' })
@@ -8,11 +8,11 @@ export default class OTP extends BaseEntity {
   id!: string;
   @Column({
     type: 'enum',
-    enum: otpType,
+    enum: OTP_TYPE,
     comment:
       'Type of OTP, either for phone number verification or email verification',
   })
-  type!: otpType;
+  type!: OTP_TYPE;
 
   @Column({
     type: 'text',

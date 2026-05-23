@@ -30,6 +30,12 @@ const swaggerOptions: swaggerJsdoc.Options = {
     ],
     components: {
       securitySchemes: {
+        // cookieAuth: {
+        //   type: 'apiKey',
+        //   in: 'cookie',
+        //   name: 'token',
+        //   description: 'HTTP-only cookie (web clients only)',
+        // },
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
@@ -523,6 +529,9 @@ const swaggerOptions: swaggerJsdoc.Options = {
       {
         bearerAuth: [],
       },
+      // {
+      //   cookieAuth: [],
+      // },
     ],
   },
 
