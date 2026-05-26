@@ -26,13 +26,41 @@ export const refreshSchemaRules: Record<
   userId: ['trim', 'escape', 'xss'],
 };
 
-export const logoutSchema = z.object({
+export const userIdSchema = z.object({
   userId: z.string(),
 });
 
-export const logoutSchemaRules: Record<
+export const userIdSchemaRules: Record<
   string,
   Array<'trim' | 'escape' | 'xss'>
 > = {
   userId: ['trim', 'escape', 'xss'],
+};
+
+export const emailSchema = z.object({
+  email: z.email(),
+});
+
+export const emailSchemaRules: Record<
+  string,
+  Array<'trim' | 'escape' | 'xss'>
+> = {
+  email: ['trim', 'escape', 'xss'],
+};
+
+export const resetPasswordSchema = z.object({
+  email: z.email(),
+  otp: z.string().min(6, 'OTP must be at least 6 characters long'),
+  newPassword: z
+    .string()
+    .min(6, 'New password must be at least 6 characters long'),
+});
+
+export const resetPasswordSchemaRules: Record<
+  string,
+  Array<'trim' | 'escape' | 'xss'>
+> = {
+  email: ['trim', 'escape', 'xss'],
+  otp: ['trim', 'escape', 'xss'],
+  newPassword: ['trim', 'escape', 'xss'],
 };

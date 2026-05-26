@@ -1,8 +1,9 @@
-import { EmailMessageOptions } from '../types';
+import { EmailMessageOptions, SendEmailOptions } from '../types';
 import nodemailer from 'nodemailer';
 import { convert } from 'html-to-text';
 import { ENVIRONMENT } from '../../config';
 import { SignupOtpTemplate, WelcomeEmailTemplate } from '../templates';
+import { ResetPasswordEmailTemplate } from '../templates/reset-password';
 
 export class EmailService {
   async nodemailerConfig(
@@ -65,18 +66,6 @@ export class EmailService {
     }
   }
 
-  async signupOtpEmail(
-    message: EmailMessageOptions,
-    otp: string | number,
-    firstName: string,
-  ): Promise<nodemailer.SentMessageInfo> {
-    const template: string = SignupOtpTemplate({
-      otp: otp?.toString(),
-      firstName,
-    });
-    return await this.sendEmail(message, template);
-  }
-
   /**
    * Attempts to send a email to the user with retry logic.
    * Returns true if sent successfully, false if all retries failed.
@@ -120,15 +109,52 @@ export class EmailService {
     return false; // Explicit failure
   }
 
-  async sendWelcomeEmail(
+  async signupOtpEmail(
     message: EmailMessageOptions,
-    firstName: string,
+    options: SendEmailOptions,
   ): Promise<nodemailer.SentMessageInfo> {
-    const template: string = WelcomeEmailTemplate({
+    const template: string = SignupOtpTemplate({
+      firstName: options.firstName as string,
+      otp: options?.otp?.toString() as string,
+      expiryMinutes: ENVIRONMENT.OTP.EXPIRY_TIME_IN_MINUTES,
       appName: ENVIRONMENT.APP.name,
-      firstName,
       appTagline: ENVIRONMENT.APP.tagline,
       teamName: ENVIRONMENT.APP.teamName,
+    });
+    return await this.sendEmail(message, template);
+  }
+
+  async sendWelcomeEmail(
+    message: EmailMessageOptions,
+    option: SendEmailOptions,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const template: string = WelcomeEmailTemplate({
+      firstName: option.firstName as string,
+      appName: ENVIRONMENT.APP.name,
+      appTagline: ENVIRONMENT.APP.tagline,
+      teamName: ENVIRONMENT.APP.teamName,
+      dashboardUrl: ENVIRONMENT.APP.dashboardUrl,
+      helpUrl: ENVIRONMENT.APP.helpUrl,
+      companyAddress: ENVIRONMENT.APP.companyAddress,
+      unsubscribeUrl: ENVIRONMENT.APP.unsubscribeUrl,
+    });
+    return await this.sendEmail(message, template);
+  }
+
+  async sendResetPasswordEmail(
+    message: EmailMessageOptions,
+    options: SendEmailOptions,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const template: string = ResetPasswordEmailTemplate({
+      firstName: options.firstName as string,
+      otp: options?.otp?.toString() as string,
+      expiryMinutes: ENVIRONMENT.OTP.EXPIRY_TIME_IN_MINUTES,
+      appName: ENVIRONMENT.APP.name,
+      appTagline: ENVIRONMENT.APP.tagline,
+      teamName: ENVIRONMENT.APP.teamName,
+      helpUrl: ENVIRONMENT.APP.helpUrl,
+      companyAddress: ENVIRONMENT.APP.companyAddress,
+      resetPasswordUrl: ENVIRONMENT.APP.resetPasswordUrl,
     });
     return await this.sendEmail(message, template);
   }

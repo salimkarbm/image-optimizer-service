@@ -10,21 +10,27 @@ import {
   resendOtpSchemaRules,
 } from '../../../auth/validations/resend-otp.validation';
 import {
+  forgotPassword,
   login,
   logout,
   logoutAll,
   refreshToken,
   resendOtp,
+  resetPassword,
   signUp,
   verifyEmail,
 } from '../../../controllers';
 import {
+  emailSchema,
+  emailSchemaRules,
   loginSchema,
   loginSchemaRules,
-  logoutSchema,
-  logoutSchemaRules,
   refreshSchema,
   refreshSchemaRules,
+  resetPasswordSchema,
+  resetPasswordSchemaRules,
+  userIdSchema,
+  userIdSchemaRules,
 } from '../../../auth/validations/login.validation';
 
 const router = Router();
@@ -66,8 +72,20 @@ router.post(
 
 router.post(
   '/auth/logout-all',
-  validateInputWithZod(logoutSchema, logoutSchemaRules),
+  validateInputWithZod(userIdSchema, userIdSchemaRules),
   logoutAll,
+);
+
+router.post(
+  '/auth/forgot-password',
+  validateInputWithZod(emailSchema, emailSchemaRules),
+  forgotPassword,
+);
+
+router.post(
+  '/auth/reset-password',
+  validateInputWithZod(resetPasswordSchema, resetPasswordSchemaRules),
+  resetPassword,
 );
 
 export default router;

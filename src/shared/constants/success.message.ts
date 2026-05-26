@@ -12,6 +12,8 @@ export const MESSAGES = () => {
     LOGGED_OUT_ALL: `Logged out from all devices successfully`,
     LOGIN: `Logged in successful`,
     SIGN_UP: `Account signed up successfully`,
+    FORGOT_PASSWORD: `Password reset link sent successfully`,
+    RESET_PASSWORD: `Password reset successfully`,
   };
 };
 

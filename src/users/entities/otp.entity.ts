@@ -7,12 +7,10 @@ export default class OTP extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
   @Column({
-    type: 'enum',
-    enum: OTP_TYPE,
     comment:
       'Type of OTP, either for phone number verification or email verification',
   })
-  type!: OTP_TYPE;
+  type!: string;
 
   @Column({
     type: 'text',

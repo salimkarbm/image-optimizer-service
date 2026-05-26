@@ -5,15 +5,16 @@ export const configuration = () => {
     APP: {
       port: parseInt(process.env.PORT as string, 10) || 3000,
       env: process.env.APP_ENV || 'development',
-      name: process.env.APP_NAME,
+      name: process.env.APP_NAME as string,
       version: process.env.APP_VERSION,
-      tagline: process.env.APP_TAGLINE,
-      teamName: process.env.TEAM_NAME,
-      dashboardUrl: process.env.DASHBOARD_URL,
-      frontendUrl: process.env.FRONTEND_URL,
-      companyAddress: process.env.COMPANY_ADDRESS,
-      unsubscribeUrl: process.env.UNSUBSCRIBE_URL,
-      helpUrl: process.env.HELP_URL,
+      tagline: process.env.APP_TAGLINE as string,
+      teamName: process.env.TEAM_NAME as string,
+      dashboardUrl: process.env.DASHBOARD_URL as string,
+      frontendUrl: process.env.FRONTEND_URL as string,
+      companyAddress: process.env.COMPANY_ADDRESS as string,
+      unsubscribeUrl: process.env.UNSUBSCRIBE_URL as string,
+      helpUrl: process.env.HELP_URL as string,
+      resetPasswordUrl: process.env.RESET_PASSWORD_URL as string,
     },
     DATABASE: {
       URI:
@@ -51,7 +52,8 @@ export const configuration = () => {
       FROM: process.env.EMAIL_FROM || 'noreply@yourapp.com',
     },
     OTP: {
-      EXPIRY_TIME: parseInt(process.env.OTP_EXPIRY_TIME as string, 10) || 10, // in minutes
+      EXPIRY_TIME_IN_MINUTES:
+        parseInt(process.env.OTP_EXPIRY_TIME_IN_MINUTES as string, 10) || 10, // in minutes
       MAX_ATTEMPTS: parseInt(process.env.OTP_MAX_ATTEMPTS as string, 10) || 3,
       GENERATION_INTERVAL:
         parseInt(process.env.OTP_GENERATION_INTERVAL as string, 10) || 1, // in minutes

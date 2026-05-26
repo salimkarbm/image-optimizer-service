@@ -1,6 +1,6 @@
-import { sendEmailOptions } from '../types';
+import { signupEmailOptions } from '../types';
 
-export const SignupOtpTemplate = (options: sendEmailOptions): string => {
+export const SignupOtpTemplate = (options: signupEmailOptions): string => {
   return `
 <!DOCTYPE html>
 <html>
@@ -30,7 +30,7 @@ export const SignupOtpTemplate = (options: sendEmailOptions): string => {
                 <span style="font-size: 28px; font-weight: bold; letter-spacing: 2px; color: #1A1A1A;">${options.otp}</span>
               </div>
               <p style="color: #CCCCCC; margin: 0 0 20px 0; line-height: 1.6;">
-                This code will expire in ${options.expiryTime} minutes. Please use it to verify your account.
+                This code will expire in ${options.expiryMinutes} minutes. Please use it to verify your account.
               </p>
               <p style="color: #CCCCCC; margin: 0 0 20px 0; line-height: 1.6;">
                 If you did not request this code, please ignore this email.

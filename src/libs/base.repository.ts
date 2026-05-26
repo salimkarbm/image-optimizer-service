@@ -8,6 +8,7 @@ import {
   Repository,
   SelectQueryBuilder,
   QueryDeepPartialEntity,
+  UpdateResult,
 } from 'typeorm';
 import BaseEntity from '../repositories/base.entity';
 import { STATUS_CODE } from '../shared/constants';
@@ -320,6 +321,21 @@ export default abstract class BaseRepository<T extends BaseEntity> {
 
   public createMany(data: DeepPartial<T>[]): T[] {
     return this.entity.create(data as any);
+  }
+
+  // For simple updates - returns affected count
+  update(
+    where: FindOptionsWhere<T>,
+    data: QueryDeepPartialEntity<T>,
+  ): Promise<UpdateResult> {
+    return this.entity.update(where, data);
+  }
+
+  // For updates with relations - returns entity
+  async preload(where: FindOptionsWhere<T>, data: DeepPartial<T>): Promise<T> {
+    const entity = await this.entity.preload({ where, ...data });
+    if (!entity) throw new AppError(`Entity not found`, 404);
+    return this.entity.save(entity);
   }
 }
 

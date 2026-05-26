@@ -1,6 +1,6 @@
-import { sendEmailOptions } from '../types';
+import { welcomeEmailOptions } from '../types';
 
-export const WelcomeEmailTemplate = (options: sendEmailOptions): string => {
+export const WelcomeEmailTemplate = (options: welcomeEmailOptions): string => {
   // return `<h1>Welcome to Image Processor API</h1><p>Thank you for signing up, ${options.firstName}! We're excited to have you on board. If you have any questions or need assistance, feel free to reach out to our support team.</p><p>Best regards,<br/>The Image Processor Team</p>`;
   return `<!DOCTYPE html>
 <html>

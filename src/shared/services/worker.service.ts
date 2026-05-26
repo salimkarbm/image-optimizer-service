@@ -15,6 +15,7 @@
 import { Worker, MetricsTime } from 'bullmq';
 import { JOB_TYPES, JobType } from './queue.service.js';
 import redisService from './redis.service';
+import emailService from './email.service.js';
 
 const QUEUE_NAME = process.env.QUEUE_NAME ?? 'default';
 const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY ?? 5);
@@ -29,7 +30,8 @@ const handlers = {
     await job.updateProgress(10);
 
     // Simulate email sending (replace with your mailer, e.g. Nodemailer, SES)
-    await simulateWork(300);
+    // await simulateWork(500);
+    //await emailService.sendEmail({ to, subject, body }, template);
     await job.updateProgress(80);
 
     // Simulate transient failure to demo retries (remove in production)

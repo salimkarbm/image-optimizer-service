@@ -1,4 +1,5 @@
 import { CookieOptions, Request, Response } from 'express';
+import * as bcrypt from 'bcrypt';
 import userRepo from '../repositories/user/user.repository';
 import AppError from '../shared/utils/errors/appError';
 import { ERROR_MESSAGE, STATUS_CODE } from '../shared/constants';
@@ -13,7 +14,7 @@ import Session from '../users/entities/session.entity';
 import sessionRepo from '../repositories/user/session.repository';
 import { addMinutes, addSeconds, differenceInMinutes } from 'date-fns';
 import { CreateSession } from '../shared/types/users/session.type';
-import { IsNull } from 'typeorm';
+import { IsNull, MoreThan } from 'typeorm';
 import { EmailMessageOptions } from '../shared/types';
 
 export class AuthService {
@@ -27,6 +28,7 @@ export class AuthService {
   private readonly LOGIN_COOL_DOWN_MINUTES = 15;
   private readonly OTP_COOL_DOWN_MINUTES = 5;
   private readonly MAX_OTP_ATTEMPTS = 3;
+  private readonly SALT_ROUND = 12;
 
   constructor() {}
 
@@ -47,7 +49,9 @@ export class AuthService {
       identifier,
       type,
       code: hashedOtp,
-      expiredAt: otpService.calculateExpiration(ENVIRONMENT.OTP.EXPIRY_TIME),
+      expiredAt: otpService.calculateExpiration(
+        ENVIRONMENT.OTP.EXPIRY_TIME_IN_MINUTES,
+      ),
       nextResendAt: otpService.nextResendTime(1), // set next resend time to 1 minute later to prevent spamming
     });
     await otpRepo.save(otp);
@@ -92,7 +96,25 @@ export class AuthService {
   //     );
   //   }
   // };
+  private sendAuthCookie = (res: Response, token: string): void => {
+    const cookieOptions: CookieOptions = {
+      httpOnly: true,
+      maxAge: ENVIRONMENT.JWT.accessTokenExpiryInSeconds,
+      sameSite: 'lax', // CSRF protection
+    };
 
+    if (ENVIRONMENT.APP.env === 'production') {
+      cookieOptions.secure = true; // HTTPS only in prod
+    }
+    res.cookie('jwt', token, cookieOptions);
+  };
+
+  private async validateEmail(email: string): Promise<Partial<User> | null> {
+    const user = await userRepo.findOne({ where: { email } });
+    if (!user) return null;
+    return user;
+  }
+  
   signUp = async (req: Request): Promise<User> => {
     const userExist = await userRepo.findOne({
       where: [{ email: req.body.email }, { username: req.body.username }],
@@ -118,7 +140,10 @@ export class AuthService {
       from: ENVIRONMENT.MAILER.FROM,
     };
     //TODO: move this to a background job to avoid blocking the main thread, and implement retry logic for email sending, if email sending fails, delete the user and otp record to maintain data integrity
-    await await emailService.signupOtpEmail(message, otp, user.firstName);
+    await emailService.signupOtpEmail(message, {
+      otp,
+      firstName: user.firstName,
+    });
     return user;
   };
 
@@ -183,12 +208,18 @@ export class AuthService {
         from: ENVIRONMENT.MAILER.FROM,
       };
       //TODO: move this to a background job to avoid blocking the main thread, and implement retry logic for email sending, if email sending fails, delete the user and otp record to maintain data integrity
-      await emailService.sendWelcomeEmail(message, user.firstName);
+      await emailService.sendWelcomeEmail(message, {
+        firstName: user.firstName,
+      });
       return;
     }
     // Increment failed OTP attempts
     await otpRepo.findOneAndUpdate(
-      { id: user.id },
+      {
+        identifier: user.email,
+        type: OTP_TYPE.EMAIL_VERIFICATION,
+        isUsed: false,
+      },
       {
         attempts: (otpRecord.attempts || 0) + 1,
       },
@@ -216,7 +247,10 @@ export class AuthService {
         subject: 'Your OTP Code for Email Verification',
         from: ENVIRONMENT.MAILER.FROM,
       };
-      return await emailService.signupOtpEmail(message, otpCode, email);
+      return await emailService.signupOtpEmail(message, {
+        otp: otpCode,
+        firstName: email,
+      });
     }
 
     // Check coolDown
@@ -253,20 +287,10 @@ export class AuthService {
       subject: 'Your OTP Code for Email Verification',
       from: ENVIRONMENT.MAILER.FROM,
     };
-    await emailService.signupOtpEmail(message, otpCode, req.body.email);
-  };
-
-  private sendAuthCookie = (res: Response, token: string): void => {
-    const cookieOptions: CookieOptions = {
-      httpOnly: true,
-      maxAge: ENVIRONMENT.JWT.accessTokenExpiryInSeconds,
-      sameSite: 'lax', // CSRF protection
-    };
-
-    if (ENVIRONMENT.APP.env === 'production') {
-      cookieOptions.secure = true; // HTTPS only in prod
-    }
-    res.cookie('jwt', token, cookieOptions);
+    return await emailService.signupOtpEmail(message, {
+      otp: otpCode,
+      firstName: req.body.email,
+    });
   };
 
   private async createSession(session: CreateSession): Promise<Session> {
@@ -331,12 +355,6 @@ export class AuthService {
     return null;
   }
 
-  private async validateEmail(email: string): Promise<Partial<User> | null> {
-    const user = await userRepo.findOne({ where: { email } });
-    if (!user) return null;
-    return user;
-  }
-
   login = async (
     req: Request,
   ): Promise<{
@@ -379,11 +397,10 @@ export class AuthService {
         subject: 'Welcome to Image Processor API',
         from: ENVIRONMENT?.MAILER.FROM,
       };
-      await emailService.signupOtpEmail(
-        message as EmailMessageOptions,
+      await emailService.signupOtpEmail(message as EmailMessageOptions, {
         otp,
-        validUser.firstName as string,
-      );
+        firstName: validUser.firstName as string,
+      });
       return {
         message: 'Please check your email to verify your account',
         user: {
@@ -431,7 +448,16 @@ export class AuthService {
     };
   };
 
-  refreshHandler = async (req: Request) => {
+  refreshHandler = async (
+    req: Request,
+  ): Promise<{
+    accessToken: string;
+    userId: string;
+    session: string;
+    tokenExpiresInSeconds: number;
+    refreshToken: string;
+    refreshExpiresInSeconds: number;
+  }> => {
     const { refreshToken } = req.cookies; // from HttpOnly cookie
     if (!refreshToken)
       throw new AppError('Missing refresh token', STATUS_CODE.UNAUTHORIZED);
@@ -490,7 +516,7 @@ export class AuthService {
     };
   };
 
-  logoutHandler = async (req: Request) => {
+  logoutHandler = async (req: Request): Promise<Session> => {
     const sessions = await sessionRepo.findOne({
       where: {
         userId: req.body.userId,
@@ -499,18 +525,129 @@ export class AuthService {
       },
     });
     if (sessions?.revokedAt === null) {
-      return await sessionRepo.findOneAndUpdate(
-        { id: sessions?.id, userId: req.body.userId },
-        { revokedAt: new Date() },
-      );
+      sessions.revokedAt = new Date();
+      return await sessionRepo.save(sessions);
     }
     throw new AppError('Session not found', STATUS_CODE.NOT_FOUND);
   };
 
-  logoutAllHandler = async (req: Request) => {
-    return await sessionRepo.findOneAndUpdate(
+  logoutAllHandler = async (req: Request): Promise<Session> => {
+    const sessions = await sessionRepo.findOneAndUpdate(
       { userId: req.body.userId, revokedAt: IsNull() },
       { revokedAt: new Date() },
     );
+    if (sessions) {
+      return sessions;
+    }
+    throw new AppError('Session not found', STATUS_CODE.NOT_FOUND);
+  };
+
+  forgotPassword = async (req: Request): Promise<User | null> => {
+    const { email } = req.body;
+    const user = await userRepo.findOne({ where: { email } });
+    if (user) {
+      const otpRecord = await otpRepo.findOne({
+        where: {
+          identifier: email,
+          type: OTP_TYPE.PASSWORD_RESET_REQUEST,
+          isUsed: false,
+        },
+      });
+      const message = {
+        to: req.body.email,
+        subject: 'Your OTP for password reset',
+        from: ENVIRONMENT.MAILER.FROM,
+      };
+      if (!otpRecord) {
+        const otpCode = await this.createOtp(
+          email,
+          OTP_TYPE.PASSWORD_RESET_REQUEST,
+        );
+        await emailService.sendResetPasswordEmail(message, {
+          otp: otpCode,
+          firstName: user.firstName,
+        });
+        return user;
+      }
+      // Check coolDown
+      const secondsLeft = otpService.checkCoolDown(otpRecord.nextResendAt);
+      if (secondsLeft !== null) {
+        throw new AppError(
+          `Please wait ${secondsLeft} seconds before requesting again.`,
+          STATUS_CODE.TOO_MANY_REQUESTS,
+        );
+      }
+
+      // Check max resend
+      if (otpService.checkMaxResendAttempts(otpRecord.resendCount)) {
+        throw new AppError(
+          'Maximum resend attempts reached. Please request a new OTP after 24 hours.',
+          STATUS_CODE.BAD_REQUEST,
+        );
+      }
+
+      // Generate new OTP
+      const coolDown = otpService.coolDownSeconds(otpRecord.resendCount);
+      const otpCode = await this.createOtp(
+        email,
+        OTP_TYPE.PASSWORD_RESET_REQUEST,
+      );
+      otpRecord.expiredAt = otpService.expiryTime(); // 10 mins
+      otpRecord.resendCount = otpRecord.resendCount + 1;
+      otpRecord.nextResendAt = new Date(Date.now() + coolDown * 1000);
+
+      //TODO:
+      /*
+    1. Rate limit the endpoint itself as a first line of defence before even hitting the service logic — this stops bots from hammering the endpoint at the network level.
+    */
+      await otpRepo.save(otpRecord);
+      return await emailService.sendResetPasswordEmail(message, {
+        otp: otpCode,
+        firstName: user.firstName,
+      });
+    }
+    return null;
+  };
+
+  resetPassword = async (req: Request) => {
+    const { otp, email, newPassword } = req.body;
+
+    // Find all non-expired, unused tokens
+    const token = await otpRepo.findAll({
+      where: {
+        isUsed: false,
+        type: OTP_TYPE.PASSWORD_RESET_REQUEST,
+        identifier: email,
+      },
+    });
+    let valid = null;
+    for (const tk of token) {
+      if (otpService.verifyStrongHashed(otp, tk.code)) {
+        valid = tk;
+        break;
+      }
+    }
+    if (!valid)
+      throw new AppError('Invalid or expired link', STATUS_CODE.BAD_REQUEST);
+
+    if (valid.expiredAt < new Date())
+      throw new AppError('Invalid or expired link', STATUS_CODE.BAD_REQUEST);
+
+    // Update password
+    const user = await userRepo.findOne({ where: { email: valid.identifier } });
+    if (!user) throw new AppError('User not found', STATUS_CODE.NOT_FOUND);
+
+    user.password = await bcrypt.hash(newPassword, this.SALT_ROUND);
+    await userRepo.save(user);
+
+    // Burn the token
+    await otpRepo.delete({ id: valid.id });
+
+    // Logout everywhere
+    await sessionRepo.update(
+      { userId: user.id, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    );
+    return user;
   };
 }

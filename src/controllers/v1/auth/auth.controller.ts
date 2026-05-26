@@ -187,3 +187,39 @@ export const logoutAll = async (
     return next(err);
   }
 };
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await authService.forgotPassword(req);
+    return HttpResponse({
+      response: res,
+      status: STATUS_CODE.OK,
+      message: data
+        ? SUCCESS_MESSAGE.FORGOT_PASSWORD
+        : 'If that email exists, we sent a reset link to it.',
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await authService.resetPassword(req);
+    return HttpResponse({
+      response: res,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.RESET_PASSWORD,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

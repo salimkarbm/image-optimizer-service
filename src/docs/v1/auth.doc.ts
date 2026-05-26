@@ -366,3 +366,77 @@
  *                   type: string
  *                   example: "User logged out successfully"
  */
+
+/**
+ * @openapi
+ * /v1/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     description: Sends an OTP to the user's email for password reset.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@example.com"
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "OTP sent successfully"
+ */
+
+/**
+ * @openapi
+ * /v1/auth/reset-password:
+ *   post:
+ *     summary: Reset password
+ *     description: Resets the user's password using the OTP sent to their email.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@example.com"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *               newPassword:
+ *                 type: string
+ *                 example: "new_password"
+ *     responses:
+ *       200:
+ *         description: Password reset successfully.
+ *       400:
+ *         description: Invalid OTP, email, or new password.
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Internal server error.
+ */
