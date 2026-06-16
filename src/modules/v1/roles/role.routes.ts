@@ -4,14 +4,16 @@ import {
   createRoleSchema,
   createRoleSchemaRules,
 } from './validations/create-role.validation';
-import { createRole } from './roles.controller';
+import { createRole, getAllRoles } from './roles.controller';
 
 const router = Router();
 
-router.post(
-  '/roles',
-  validateInputWithZod(createRoleSchema, createRoleSchemaRules),
-  createRole,
-);
+router
+  .route('/roles')
+  .post(
+    validateInputWithZod(createRoleSchema, createRoleSchemaRules),
+    createRole,
+  )
+  .get(getAllRoles);
 
 export default router;

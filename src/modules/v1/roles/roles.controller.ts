@@ -20,3 +20,21 @@ export const createRole = async (
     return next(err);
   }
 };
+
+export const getAllRoles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await rolesService.getAllRoles();
+    return HttpResponse({
+      response: res,
+      data,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.FETCHED('Roles'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

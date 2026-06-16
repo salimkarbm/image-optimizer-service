@@ -29,3 +29,25 @@
  *                 message:
  *                   type: string
  */
+
+/**
+ * @openapi
+ * /v1/roles:
+ *   get:
+ *     summary: Get all roles
+ *     tags: [Role]
+ *     responses:
+ *       200:
+ *         description: All roles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Roles'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+
