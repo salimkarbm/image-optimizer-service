@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import healthRoute from './health.route';
-import securityRoute from './security.route';
-import authRoute from './auth/auth.route';
+import healthRoute from '../../modules/v1/security/health.route';
+import securityRoute from '../../modules/v1/security/security.route';
+import authRoute from '../../modules/v1/auth/auth.route';
+import permissionRoute from '../../modules/v1/permissions/permission.routes';
 
 const router = Router();
 
@@ -13,5 +14,8 @@ router.use(healthRoute);
 
 // security routes
 router.use(securityRoute);
+
+// Permission routes
+router.use(permissionRoute);
 
 export default router;

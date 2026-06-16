@@ -1,7 +1,12 @@
 import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import { STATUS_CODE } from '../constants';
 import AppError from '../utils/errors/appError';
-import { ENVIRONMENT } from '../../config';
+import { ENVIRONMENT } from '../../config/environment';
+import { Request } from 'express';
+
+// interface JwtPayload extends jwt.JwtPayload {
+//   sub: string;
+// }
 
 class JwtService {
   private secretKey: string;
@@ -41,6 +46,14 @@ class JwtService {
       }
       throw new AppError('Invalid token', STATUS_CODE.UNAUTHORIZED);
     }
+  }
+
+  extractToken(req: Request): string | null {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+    return authHeader.split(' ')[1];
   }
 }
 const jwtService = new JwtService();

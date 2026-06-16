@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { ENVIRONMENT } from '../../../config';
+import { ENVIRONMENT } from '../../../config/environment';
 import AppError from './appError';
 
 export const sendErrorDev = (err: AppError, res: Response) => {

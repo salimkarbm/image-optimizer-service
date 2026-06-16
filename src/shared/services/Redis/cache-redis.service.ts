@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { ENVIRONMENT } from '../../../config';
+import { ENVIRONMENT } from '../../../config/environment';
 
 class CacheRedisService {
   public redis: Redis;

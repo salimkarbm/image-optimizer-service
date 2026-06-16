@@ -1,3 +1,4 @@
 export * from './validation.middleware';
-export * from './doc/openapi.validation.middleware';
-export * from './auth.middleware';
+export * from './openapi.validation.middleware';
+export * from './detect-client.middleware';
+export * from './audit.middleware';

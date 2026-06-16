@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { ENVIRONMENT } from '../../../config';
+import { ENVIRONMENT } from '../../../config/environment';
 
 class QueueRedisService {
   public redis: Redis;

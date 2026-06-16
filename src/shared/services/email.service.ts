@@ -1,7 +1,7 @@
 import { EmailMessageOptions, SendEmailOptions } from '../types';
 import nodemailer from 'nodemailer';
 import { convert } from 'html-to-text';
-import { ENVIRONMENT } from '../../config';
+import { ENVIRONMENT } from '../../config/environment';
 import { SignupOtpTemplate, WelcomeEmailTemplate } from '../templates';
 import { ResetPasswordEmailTemplate } from '../templates/reset-password';
 

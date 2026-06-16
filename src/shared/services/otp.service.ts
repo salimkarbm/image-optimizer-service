@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 import * as crypto from 'crypto';
-import { ENVIRONMENT } from '../../config';
+import { ENVIRONMENT } from '../../config/environment';
 import { STATUS_CODE } from '../constants';
 import AppError from '../utils/errors/appError';
 export class OTPService {

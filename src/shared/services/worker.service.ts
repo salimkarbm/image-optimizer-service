@@ -15,7 +15,7 @@
 import { Worker, MetricsTime } from 'bullmq';
 import redisService from './Redis/queue-redis.service';
 import emailService from './email.service';
-import { ENVIRONMENT } from 'src/config';
+import { ENVIRONMENT } from 'src/config/environment';
 import { JOB_TYPES, JobType } from './queue.service';
 
 // ─── Job handlers ────────────────

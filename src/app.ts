@@ -12,10 +12,10 @@ import swaggerUi from 'swagger-ui-express';
 import AppError from './shared/utils/errors/appError';
 import { errorHandler } from './middlewares/errors/errorMiddleware';
 import router from './routes/v1';
-import { AppDataSource } from './config/typeorm.config';
-import { ENVIRONMENT } from './config';
+import { AppDataSource } from './config/database/typeorm.config';
+import { ENVIRONMENT } from './config/environment';
 import { specConfig } from './docs/v1/swagger';
-import validateOpenApiSpec from './middlewares/doc/openapi.validation.middleware';
+import validateOpenApiSpec from './middlewares/openapi.validation.middleware';
 import redisService from './shared/services/Redis/queue-redis.service';
 import { getSecurityHeaders, getSwaggerOptions } from './shared/utils';
 

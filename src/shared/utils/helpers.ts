@@ -4,7 +4,7 @@ import { PaginatedResponse } from '../types/paginate.type';
 import { ErrorResponse } from '../types';
 import { isAfter, parseISO } from 'date-fns';
 import { DateTime } from 'luxon';
-import { ENVIRONMENT } from '../../config';
+import { ENVIRONMENT } from '../../config/environment';
 import { Request } from 'express';
 
 const ALGORITHM = 'aes-256-gcm';
