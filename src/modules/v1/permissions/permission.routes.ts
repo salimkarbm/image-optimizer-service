@@ -4,14 +4,16 @@ import {
   createPermissionSchema,
   createPermissionSchemaRules,
 } from './validations/create.validation';
-import { createPermission } from './permissions.controller';
+import { createPermission, getAllPermissions } from './permissions.controller';
 
 const router = Router();
 
-router.post(
-  '/permissions',
-  validateInputWithZod(createPermissionSchema, createPermissionSchemaRules),
-  createPermission,
-);
+router
+  .route('/permissions')
+  .post(
+    validateInputWithZod(createPermissionSchema, createPermissionSchemaRules),
+    createPermission,
+  )
+  .get(getAllPermissions);
 
 export default router;

@@ -19,3 +19,21 @@ export const createPermission = async (
     return next(err);
   }
 };
+
+export const getAllPermissions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await permissionsService.getAllPermissions();
+    return HttpResponse({
+      response: res,
+      data,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.FETCHED('Permissions'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

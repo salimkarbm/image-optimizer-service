@@ -15,7 +15,7 @@ export class Role extends BaseEntity {
   @Column({ unique: true })
   name!: string; // e.g. 'Owner', 'Admin', 'Editor', 'Viewer'
 
-  @Column({ default: true })
+  @Column({ default: false })
   isSystem!: boolean;
 
   @Column({ type: 'boolean', default: false })

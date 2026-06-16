@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Users1781443096110 implements MigrationInterface {
-  name = 'Users1781443096110';
+export class Users1781598723060 implements MigrationInterface {
+  name = 'Users1781598723060';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -17,7 +17,7 @@ export class Users1781443096110 implements MigrationInterface {
       `CREATE TABLE "session" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "userId" uuid NOT NULL, "refreshToken" text NOT NULL, "userAgent" text NOT NULL, "ipAddress" text NOT NULL, "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL, "revokedAt" TIMESTAMP WITH TIME ZONE, "deviceName" text NOT NULL, "lastSeenAt" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id")); COMMENT ON COLUMN "session"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
     );
     await queryRunner.query(
-      `CREATE TABLE "roles" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "key" character varying NOT NULL, "name" character varying NOT NULL, "isSystem" boolean NOT NULL DEFAULT true, CONSTRAINT "UQ_a87cf0659c3ac379b339acf36a2" UNIQUE ("key"), CONSTRAINT "UQ_648e3f5447f725579d7d4ffdfb7" UNIQUE ("name"), CONSTRAINT "PK_c1433d71a4838793a49dcad46ab" PRIMARY KEY ("id")); COMMENT ON COLUMN "roles"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
+      `CREATE TABLE "roles" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "key" character varying NOT NULL, "name" character varying NOT NULL, "isSystem" boolean NOT NULL DEFAULT false, "isDefault" boolean NOT NULL DEFAULT false, "isSuperAdmin" boolean NOT NULL DEFAULT false, CONSTRAINT "UQ_a87cf0659c3ac379b339acf36a2" UNIQUE ("key"), CONSTRAINT "UQ_648e3f5447f725579d7d4ffdfb7" UNIQUE ("name"), CONSTRAINT "PK_c1433d71a4838793a49dcad46ab" PRIMARY KEY ("id")); COMMENT ON COLUMN "roles"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
     );
     await queryRunner.query(
       `CREATE TABLE "organizations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "slug" character varying NOT NULL, "name" character varying NOT NULL, CONSTRAINT "UQ_963693341bd612aa01ddf3a4b68" UNIQUE ("slug"), CONSTRAINT "PK_6b031fcd0863e3f6b44230163f9" PRIMARY KEY ("id")); COMMENT ON COLUMN "organizations"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
@@ -26,10 +26,10 @@ export class Users1781443096110 implements MigrationInterface {
       `CREATE TABLE "memberships" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "userId" uuid NOT NULL, "organizationId" uuid NOT NULL, "roleId" uuid, CONSTRAINT "UQ_64893eb3c6fcaeaaee71a4d0ae1" UNIQUE ("userId", "organizationId"), CONSTRAINT "PK_25d28bd932097a9e90495ede7b4" PRIMARY KEY ("id")); COMMENT ON COLUMN "memberships"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
     );
     await queryRunner.query(
-      `CREATE TABLE "permissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "key" character varying NOT NULL, "description" character varying NOT NULL, CONSTRAINT "UQ_017943867ed5ceef9c03edd9745" UNIQUE ("key"), CONSTRAINT "PK_920331560282b8bd21bb02290df" PRIMARY KEY ("id")); COMMENT ON COLUMN "permissions"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
+      `CREATE TABLE "permissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "key" character varying NOT NULL, "action" character varying NOT NULL, "resource" character varying NOT NULL, "description" character varying NOT NULL, CONSTRAINT "UQ_017943867ed5ceef9c03edd9745" UNIQUE ("key"), CONSTRAINT "PK_920331560282b8bd21bb02290df" PRIMARY KEY ("id")); COMMENT ON COLUMN "permissions"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
     );
     await queryRunner.query(
-      `CREATE TABLE "role_permissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "roleId" uuid, "permissionId" uuid, CONSTRAINT "PK_84059017c90bfcb701b8fa42297" PRIMARY KEY ("id")); COMMENT ON COLUMN "role_permissions"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
+      `CREATE TABLE "role_permissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "rowVersion" integer NOT NULL, "roleId" uuid NOT NULL, "permissionId" uuid NOT NULL, CONSTRAINT "PK_84059017c90bfcb701b8fa42297" PRIMARY KEY ("id")); COMMENT ON COLUMN "role_permissions"."rowVersion" IS 'System‑managed optimistic‑locking column'`,
     );
     await queryRunner.query(
       `ALTER TABLE "audit_logs" ADD CONSTRAINT "FK_2d031e6155834882f54dcd6b4f5" FOREIGN KEY ("organizationId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,

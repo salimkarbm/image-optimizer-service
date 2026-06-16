@@ -59,3 +59,24 @@
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
+
+/**
+ * @openapi
+ * /v1/permissions:
+ *   get:
+ *     summary: Get all permissions
+ *     tags: [Permissions]
+ *     responses:
+ *       200:
+ *         description: All permissions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Permission'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */

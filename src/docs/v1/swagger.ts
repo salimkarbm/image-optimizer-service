@@ -114,6 +114,48 @@ const swaggerOptions: swaggerJsdoc.Options = {
             },
           },
         },
+        Permission: {
+          type: 'object',
+          required: ['key', 'action', 'resource'],
+          properties: {
+            key: {
+              type: 'string',
+              description: 'Permission key',
+              example: 'create_user',
+            },
+            action: {
+              type: 'string',
+              description: 'Permission action',
+              example: 'create',
+            },
+            resource: {
+              type: 'string',
+              description: 'Permission resource',
+              example: 'users',
+            },
+          },
+        },
+        Roles: {
+          type: 'object',
+          required: ['key', 'name', 'isSystem'],
+          properties: {
+            key: {
+              type: 'string',
+              description: 'Role key',
+              example: 'admin',
+            },
+            name: {
+              type: 'string',
+              description: 'Role name',
+              example: 'Admin',
+            },
+            isSystem: {
+              type: 'boolean',
+              description: 'Indicates if the role is a system role',
+              example: true,
+            },
+          },
+        },
         CreateUserRequest: {
           type: 'object',
           required: ['email', 'password', 'firstName', 'lastName', 'username'],
