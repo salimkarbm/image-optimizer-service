@@ -80,3 +80,54 @@
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
+
+/**
+ * @openapi
+ * /v1/role-permissions:
+ *   post:
+ *     summary: Create a new role permission
+ *     tags: [Role Permissions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - roleId
+ *               - permissionId
+ *             properties:
+ *               roleId:
+ *                 type: string
+ *               permissionId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Role permission created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Role permission created successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *                     roleId:
+ *                       type: string
+ *                       example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *                     permissionId:
+ *                       type: string
+ *                       example: "64a7b8c9d1e2f3g4h5i6j7k8"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       409:
+ *         $ref: '#/components/responses/Conflict'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */

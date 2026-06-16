@@ -50,4 +50,3 @@
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-

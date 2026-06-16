@@ -3,8 +3,14 @@ import { validateInputWithZod } from '../../../middlewares';
 import {
   createPermissionSchema,
   createPermissionSchemaRules,
+  createRolePermissionSchema,
+  createRolePermissionSchemaRules,
 } from './validations/create.validation';
-import { createPermission, getAllPermissions } from './permissions.controller';
+import {
+  createPermission,
+  createRolePermission,
+  getAllPermissions,
+} from './permissions.controller';
 
 const router = Router();
 
@@ -15,5 +21,15 @@ router
     createPermission,
   )
   .get(getAllPermissions);
+
+router
+  .route('/role-permissions')
+  .post(
+    validateInputWithZod(
+      createRolePermissionSchema,
+      createRolePermissionSchemaRules,
+    ),
+    createRolePermission,
+  );
 
 export default router;

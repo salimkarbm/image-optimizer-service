@@ -16,3 +16,16 @@ export const createPermissionSchemaRules: Record<
   resource: ['trim', 'escape', 'xss'],
   description: ['trim', 'escape', 'xss'],
 };
+
+export const createRolePermissionSchema = z.object({
+  roleId: z.string().nonempty(),
+  permissionId: z.string().nonempty(),
+});
+
+export const createRolePermissionSchemaRules: Record<
+  string,
+  Array<'trim' | 'escape' | 'xss'>
+> = {
+  roleId: ['trim', 'escape', 'xss'],
+  permissionId: ['trim', 'escape', 'xss'],
+};

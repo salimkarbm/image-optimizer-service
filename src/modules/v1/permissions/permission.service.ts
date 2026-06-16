@@ -3,6 +3,7 @@ import { permissionsRepo } from '../../../infrastructure/repositories/permission
 import { STATUS_CODE } from '../../../shared/constants';
 import AppError from '../../../shared/utils/errors/appError';
 import { rolePermissionsRepo } from '../../../infrastructure/repositories/role-permissions.repository';
+import { rolesRepo } from 'src/infrastructure/repositories/roles.repository';
 
 export class PermissionsService {
   constructor() {}
@@ -44,6 +45,25 @@ export class PermissionsService {
 
   async createRolePermission(req: Request) {
     try {
+      const roleExist = await rolesRepo.findOne({
+        where: {
+          id: req.body.roleId,
+        },
+      });
+      if (!roleExist) {
+        throw new AppError('Role does not exist', STATUS_CODE.BAD_REQUEST);
+      }
+      const permissionExist = await permissionsRepo.findOne({
+        where: {
+          id: req.body.permissionId,
+        },
+      });
+      if (!permissionExist) {
+        throw new AppError(
+          'Permission does not exist',
+          STATUS_CODE.BAD_REQUEST,
+        );
+      }
       const hasRolePermission = await rolePermissionsRepo.findOne({
         where: {
           roleId: req.body.roleId,

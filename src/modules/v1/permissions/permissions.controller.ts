@@ -37,3 +37,20 @@ export const getAllPermissions = async (
     return next(err);
   }
 };
+
+export const createRolePermission = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await permissionsService.createRolePermission(req);
+    return HttpResponse({
+      response: res,
+      status: STATUS_CODE.CREATED,
+      message: SUCCESS_MESSAGE.CREATED('Role Permission'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
