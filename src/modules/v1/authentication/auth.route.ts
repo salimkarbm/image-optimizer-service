@@ -1,17 +1,11 @@
 import { Router } from 'express';
 import { validateInputWithZod } from '../../../middlewares';
-import {
-  signUpSchema,
-  signUpSchemaRules,
-} from '../../../modules/v1/auth/validations';
-import {
-  verifyEmailSchema,
-  verifyEmailSchemaRules,
-} from '../../../modules/v1/auth/validations';
+import { signUpSchema, signUpSchemaRules } from './validations';
+import { verifyEmailSchema, verifyEmailSchemaRules } from './validations';
 import {
   resendOtpSchema,
   resendOtpSchemaRules,
-} from '../../../modules/v1/auth/validations/resend-otp.validation';
+} from './validations/resend-otp.validation';
 import {
   emailSchema,
   emailSchemaRules,
@@ -23,7 +17,7 @@ import {
   resetPasswordSchemaRules,
   userIdSchema,
   userIdSchemaRules,
-} from '../../../modules/v1/auth/validations/login.validation';
+} from './validations/login.validation';
 import {
   forgotPassword,
   login,

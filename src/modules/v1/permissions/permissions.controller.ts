@@ -9,7 +9,9 @@ export const createPermission = async (
   next: NextFunction,
 ) => {
   try {
-    const data = await permissionsService.createPermission(req);
+    const data = await permissionsService.createPermission({
+      ...req.body,
+    });
     return HttpResponse({
       response: res,
       status: STATUS_CODE.CREATED,
@@ -49,6 +51,24 @@ export const createRolePermission = async (
       response: res,
       status: STATUS_CODE.CREATED,
       message: SUCCESS_MESSAGE.CREATED('Role Permission'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const getAllRolePermissions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await permissionsService.getAllRolePermissions(req.query);
+    return HttpResponse({
+      response: res,
+      data,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.FETCHED('Role Permissions'),
     });
   } catch (err) {
     return next(err);

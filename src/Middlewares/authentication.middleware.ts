@@ -1,5 +1,5 @@
-import { STATUS_CODE } from 'src/shared/constants';
-import AppError from 'src/shared/utils/errors/appError';
+import { STATUS_CODE } from '../shared/constants';
+import AppError from '../shared/utils/errors/appError';
 import { Request, Response, NextFunction } from 'express';
 import jwtService from '../shared/services/jwt.service';
 import userRepository from '../infrastructure/repositories/user/user.repository';

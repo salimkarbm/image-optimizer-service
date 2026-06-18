@@ -3,13 +3,10 @@ import { STATUS_CODE } from '../constants';
 import AppError from '../utils/errors/appError';
 import { ENVIRONMENT } from '../../config/environment';
 import { Request } from 'express';
-
-// interface JwtPayload extends jwt.JwtPayload {
-//   sub: string;
-// }
+import { User } from '../types/users/user.type';
 
 class JwtService {
-  private secretKey: string;
+  private readonly secretKey: string;
 
   constructor() {
     this.secretKey = ENVIRONMENT.JWT.secret;
@@ -31,6 +28,18 @@ class JwtService {
         STATUS_CODE.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  generateAccessToken(user: User) {
+    return jwt.sign(
+      {
+        sub: user.id,
+      },
+      this.secretKey!,
+      {
+        expiresIn: '7d',
+      },
+    );
   }
 
   async verifyToken(token: string): Promise<JwtPayload> {

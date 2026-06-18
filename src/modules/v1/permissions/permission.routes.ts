@@ -10,7 +10,12 @@ import {
   createPermission,
   createRolePermission,
   getAllPermissions,
+  getAllRolePermissions,
 } from './permissions.controller';
+import {
+  fetchRolePermissionsQuerySchema,
+  fetchRolePermissionsQuerySchemaRules,
+} from './validations/filter.validation';
 
 const router = Router();
 
@@ -30,6 +35,13 @@ router
       createRolePermissionSchemaRules,
     ),
     createRolePermission,
+  )
+  .get(
+    validateInputWithZod(
+      fetchRolePermissionsQuerySchema,
+      fetchRolePermissionsQuerySchemaRules,
+    ),
+    getAllRolePermissions,
   );
 
 export default router;

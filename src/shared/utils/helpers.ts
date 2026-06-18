@@ -2,10 +2,10 @@ import { Response } from 'express';
 import crypto, { CipherKey } from 'crypto';
 import { PaginatedResponse } from '../types/paginate.type';
 import { ErrorResponse } from '../types';
-import { isAfter, parseISO } from 'date-fns';
 import { DateTime } from 'luxon';
 import { ENVIRONMENT } from '../../config/environment';
 import { Request } from 'express';
+import { RequestContext } from '../types/request/request';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // GCM recommends 12 bytes
@@ -198,3 +198,11 @@ export const logger = {
     }
   },
 };
+
+// export function getContext(req: Request): RequestContext {
+//   return {
+//     user: req.user!,
+//     organization: req.organization!,
+//     membership: req.membership!,
+//   };
+// }

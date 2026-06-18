@@ -1,8 +1,11 @@
 import CryptoJS from 'crypto-js';
 import * as crypto from 'crypto';
-import { ENVIRONMENT } from '../../config/environment';
-import { STATUS_CODE } from '../constants';
-import AppError from '../utils/errors/appError';
+import { ENVIRONMENT } from '../../../config/environment';
+import { STATUS_CODE } from '../../../shared/constants';
+import AppError from '../../../shared/utils/errors/appError';
+import otpRepo from '../../../infrastructure/repositories/user/otp.repository';
+import { FindManyOptions, FindOneOptions, FindOptionsWhere } from 'typeorm';
+import OTP from '../users/entities/otp.entity';
 export class OTPService {
   private readonly tenMinutesInMs: number = 10 * 60 * 1000;
   private readonly oneMinuteInMs: number = 60 * 1000;
@@ -18,7 +21,7 @@ export class OTPService {
   private readonly MAX_OTP_ATTEMPTS = 3;
   private readonly ONE_MINUTE_IN_MS = 60 * 1000;
 
-  constructor() {
+  constructor(private readonly otpRepository: typeof otpRepo) {
     this.SECRET_KEY = ENVIRONMENT.OTP.ENCRYPTION_KEY;
   }
 
@@ -187,6 +190,47 @@ export class OTPService {
     const attempts = resendCount ?? 0; // null/undefined -> 0
     return attempts >= this.MAX_OTP_GENERATION_ATTEMPTS;
   }
+
+  findOne(options: FindOneOptions<OTP>): Promise<OTP | null> {
+    return this.otpRepository.findOne(options);
+  }
+
+  findAll(options: FindManyOptions<OTP>): Promise<OTP[]> {
+    return this.otpRepository.findAll(options);
+  }
+
+  count(options: FindOneOptions<OTP>): Promise<number> {
+    return this.otpRepository.count(options);
+  }
+
+  async save(otp: OTP): Promise<OTP> {
+    return this.otpRepository.save(otp);
+  }
+
+  async remove(options: FindOptionsWhere<OTP>): Promise<void> {
+    await this.otpRepository.delete(options);
+  }
+
+  async findOneAndUpdate(
+    where: FindOptionsWhere<OTP>,
+    partialEntity: Partial<OTP>,
+    returnEntity = true,
+  ): Promise<OTP | null | void> {
+    return this.otpRepository.findOneAndUpdate(
+      where,
+      partialEntity,
+      returnEntity,
+    );
+  }
+
+  async update(where: FindOptionsWhere<OTP>, partialEntity: Partial<OTP>) {
+    return this.otpRepository.update(where, partialEntity);
+  }
+
+  async create(otp: Partial<OTP>): Promise<OTP> {
+    const saved = this.otpRepository.create(otp);
+    return this.otpRepository.save(saved);
+  }
 }
-const otpService = new OTPService();
+const otpService = new OTPService(otpRepo);
 export default otpService;

@@ -1,6 +1,5 @@
 import { CookieOptions, Request, Response } from 'express';
 import * as bcrypt from 'bcrypt';
-import userRepo from '../../../infrastructure/repositories/user/user.repository';
 import AppError from '../../../shared/utils/errors/appError';
 import {
   AuditAction,
@@ -8,23 +7,22 @@ import {
   ERROR_MESSAGE,
   STATUS_CODE,
 } from '../../../shared/constants';
-import emailService from '../../../shared/services/email.service';
-import otpService from '../../../shared/services/otp.service';
 import { ENVIRONMENT } from '../../../config/environment';
 import User from '../users/entities/user.entity';
-import otpRepo from '../../../infrastructure/repositories/user/otp.repository';
 import { OTP_TYPE } from '../../../shared/enums/otp.enum';
 import jwtService from '../../../shared/services/jwt.service';
 import Session from '../users/entities/session.entity';
-import sessionRepo from '../../../infrastructure/repositories/user/session.repository';
 import { addMinutes, addSeconds, differenceInMinutes } from 'date-fns';
-import { CreateSession } from '../../../shared/types/users/session.type';
 import { IsNull } from 'typeorm';
 import {
   JOB_TYPES,
   queueService,
 } from '../../../shared/services/queue.service';
 import { auditEvents } from '../audit/audit.service';
+import userService from '../users/users.service';
+import emailService from '../../../shared/services/email.service';
+import otpService from '../otps/otp.service';
+import sessionsService from '../sessions/sessions.service';
 
 export class AuthService {
   private readonly RESET_TOKEN_VALIDITY_MINUTES = 60;
@@ -45,16 +43,9 @@ export class AuthService {
     identifier: string,
     type: OTP_TYPE,
   ): Promise<string> => {
-    const otpExist = otpRepo.findOne({
-      where: {
-        identifier,
-        type,
-        isUsed: false,
-      },
-    });
     const otpCode = otpService.generate();
     const hashedOtp = otpService.strongHash(otpCode);
-    const otp = otpRepo.create({
+    await otpService.create({
       identifier,
       type,
       code: hashedOtp,
@@ -63,7 +54,6 @@ export class AuthService {
       ),
       nextResendAt: otpService.nextResendTime(1), // set next resend time to 1 minute later to prevent spamming
     });
-    await otpRepo.save(otp);
     return otpCode;
   };
 
@@ -119,15 +109,16 @@ export class AuthService {
   };
 
   private async validateEmail(email: string): Promise<Partial<User> | null> {
-    const user = await userRepo.findOne({ where: { email } });
+    const user = await userService.findByEmail(email);
     if (!user) return null;
     return user;
   }
 
   signUp = async (req: Request): Promise<User> => {
-    const userExist = await userRepo.findOne({
-      where: [{ email: req.body.email }, { username: req.body.username }],
-    });
+    const userExist = await userService.findByEmailOrUsername(
+      req.body.email,
+      req.body.username,
+    );
     if (userExist) {
       throw new AppError(
         ERROR_MESSAGE.ALREADY_EXISTS('User with this email or username'),
@@ -138,10 +129,7 @@ export class AuthService {
       req.body.email,
       OTP_TYPE.EMAIL_VERIFICATION,
     );
-    const user = userRepo.create({
-      ...req.body,
-    });
-    await userRepo.save(user);
+    const user = await userService.create({ ...req.body });
 
     const message = {
       to: user.email,
@@ -159,7 +147,7 @@ export class AuthService {
 
   verifyEmail = async (req: Request): Promise<void> => {
     const { email, otp } = req.body;
-    const otpRecord = await otpRepo.findOne({
+    const otpRecord = await otpService.findOne({
       where: {
         identifier: email,
         type: OTP_TYPE.EMAIL_VERIFICATION,
@@ -175,9 +163,7 @@ export class AuthService {
     if (otpService.isExpired(otpRecord.expiredAt)) {
       throw new AppError('OTP has expired', STATUS_CODE.BAD_REQUEST);
     }
-    const user = await userRepo.findOne({
-      where: { email },
-    });
+    const user = await userService.findByEmail(email);
     if (!user) {
       throw new AppError(
         'User not found for this email',
@@ -210,8 +196,8 @@ export class AuthService {
     const isValidOtp = otpService.verifyStrongHashed(otp, otpRecord.code);
     if (isValidOtp) {
       user.emailVerifiedAt = new Date();
-      await userRepo.save(user);
-      await otpRepo.delete({
+      await userService.save(user);
+      await otpService.remove({
         id: otpRecord.id,
       });
 
@@ -229,7 +215,7 @@ export class AuthService {
       return;
     }
     // Increment failed OTP attempts
-    await otpRepo.findOneAndUpdate(
+    await otpService.findOneAndUpdate(
       {
         identifier: user.email,
         type: OTP_TYPE.EMAIL_VERIFICATION,
@@ -245,7 +231,7 @@ export class AuthService {
   resendOTP = async (req: Request): Promise<void> => {
     const { email } = req.body;
 
-    const latestOtp = await otpRepo.findOne({
+    const latestOtp = await otpService.findOne({
       where: {
         identifier: email,
         type: OTP_TYPE.EMAIL_VERIFICATION,
@@ -289,7 +275,7 @@ export class AuthService {
     }
 
     // Invalidate ALL unused OTPs for this email/type
-    await otpRepo.update(
+    await otpService.update(
       {
         identifier: email,
         type: OTP_TYPE.EMAIL_VERIFICATION,
@@ -312,7 +298,7 @@ export class AuthService {
     /*
     1. Rate limit the endpoint itself as a first line of defence before even hitting the service logic — this stops bots from hammering the endpoint at the network level.
     */
-    await otpRepo.save(latestOtp);
+    await otpService.save(latestOtp);
     const message = {
       to: req.body.email,
       subject: 'Your OTP Code for Email Verification',
@@ -327,13 +313,8 @@ export class AuthService {
     return;
   };
 
-  private async createSession(session: CreateSession): Promise<Session> {
-    const newSession = sessionRepo.create(session);
-    return await sessionRepo.save(newSession);
-  }
-
   private async validateUser(req: Request): Promise<Partial<User> | null> {
-    const user = await userRepo.findOne({
+    const user = await userService.findOne({
       where: { email: req.body.email },
     });
     if (!user) return null;
@@ -367,7 +348,7 @@ export class AuthService {
 
     if (user && (await user.validatePassword(req.body.password))) {
       // Reset login attempts on successful login
-      await userRepo.findOneAndUpdate(
+      await userService.findOneAndUpdate(
         { id: user.id },
         {
           loginAttempts: { count: 0, lastAttempt: new Date() },
@@ -376,7 +357,7 @@ export class AuthService {
       return user;
     }
     // Increment failed login attempts
-    await userRepo.findOneAndUpdate(
+    await userService.findOneAndUpdate(
       { id: user.id },
       {
         loginAttempts: {
@@ -415,7 +396,7 @@ export class AuthService {
       const now = new Date();
       if (now > userVerificationExpiryTime) {
         // Delete unverified user after 24 hours
-        await userRepo.delete({ id: validUser.id });
+        await userService.remove({ id: validUser.id });
         throw new AppError(
           'Registration expired. Please register again.',
           STATUS_CODE.UNAUTHORIZED,
@@ -453,7 +434,7 @@ export class AuthService {
     }
 
     // Check concurrent sessions
-    const userSessions = await sessionRepo.findAll({
+    const userSessions = await sessionsService.findAll({
       where: { userId: validUser.id },
       order: { lastSeenAt: 'ASC' },
     });
@@ -462,7 +443,7 @@ export class AuthService {
       const oldestSession = userSessions[0];
 
       // Kill the oldest session
-      await sessionRepo.update(
+      await sessionsService.update(
         { id: oldestSession.id },
         { expiresAt: new Date() }, // Expire it now
       );
@@ -477,7 +458,7 @@ export class AuthService {
       ENVIRONMENT.JWT.refreshTokenExpiryInSeconds,
     );
     // create session
-    const session = await this.createSession({
+    const session = await sessionsService.create({
       userId: validUser.id as string,
       userAgent: req.headers['user-agent'] || ('' as string),
       ipAddress: req.ip || req.socket.remoteAddress || ('' as string),
@@ -535,7 +516,7 @@ export class AuthService {
     if (!refreshToken)
       throw new AppError('Missing refresh token', STATUS_CODE.UNAUTHORIZED);
 
-    const session = await sessionRepo.findOne({
+    const session = await sessionsService.findOne({
       where: { id: req.body.sessionId, userId: req.body.userId },
     });
     if (!session)
@@ -560,7 +541,7 @@ export class AuthService {
       );
 
     // Rotation: Revoke old, issue new. Prevents replay attacks
-    await sessionRepo.findOneAndUpdate(
+    await sessionsService.findOneAndUpdate(
       { id: session.id },
       { revokedAt: new Date() },
     );
@@ -575,7 +556,7 @@ export class AuthService {
     );
 
     // Update last_seen_at
-    await sessionRepo.findOneAndUpdate(
+    await sessionsService.findOneAndUpdate(
       { id: session.id },
       { lastSeenAt: new Date(), refreshToken: newRefreshToken },
     );
@@ -590,7 +571,7 @@ export class AuthService {
   };
 
   logoutHandler = async (req: Request): Promise<Session> => {
-    const sessions = await sessionRepo.findOne({
+    const sessions = await sessionsService.findOne({
       where: {
         userId: req.body.userId,
         id: req.body.sessionId,
@@ -599,13 +580,13 @@ export class AuthService {
     });
     if (sessions?.revokedAt === null) {
       sessions.revokedAt = new Date();
-      return await sessionRepo.save(sessions);
+      return await sessionsService.save(sessions);
     }
     throw new AppError('Session not found', STATUS_CODE.NOT_FOUND);
   };
 
   logoutAllHandler = async (req: Request): Promise<Session> => {
-    const sessions = await sessionRepo.findOneAndUpdate(
+    const sessions = await sessionsService.findOneAndUpdate(
       { userId: req.body.userId, revokedAt: IsNull() },
       { revokedAt: new Date() },
     );
@@ -617,9 +598,9 @@ export class AuthService {
 
   forgotPassword = async (req: Request): Promise<User | null> => {
     const { email } = req.body;
-    const user = await userRepo.findOne({ where: { email } });
+    const user = await userService.findOne({ where: { email } });
     if (user) {
-      const otpRecord = await otpRepo.findOne({
+      const otpRecord = await otpService.findOne({
         where: {
           identifier: email,
           type: OTP_TYPE.PASSWORD_RESET_REQUEST,
@@ -679,7 +660,7 @@ export class AuthService {
       /*
     1. Rate limit the endpoint itself as a first line of defence before even hitting the service logic — this stops bots from hammering the endpoint at the network level.
     */
-      await otpRepo.save(otpRecord);
+      await otpService.save(otpRecord);
       const message = {
         to: req.body.email,
         subject: 'Your OTP for password reset',
@@ -700,7 +681,7 @@ export class AuthService {
     const { otp, email, newPassword } = req.body;
 
     // Find all non-expired, unused tokens
-    const token = await otpRepo.findAll({
+    const token = await otpService.findAll({
       where: {
         isUsed: false,
         type: OTP_TYPE.PASSWORD_RESET_REQUEST,
@@ -721,17 +702,19 @@ export class AuthService {
       throw new AppError('Invalid or expired link', STATUS_CODE.BAD_REQUEST);
 
     // Update password
-    const user = await userRepo.findOne({ where: { email: valid.identifier } });
+    const user = await userService.findOne({
+      where: { email: valid.identifier },
+    });
     if (!user) throw new AppError('User not found', STATUS_CODE.NOT_FOUND);
 
     user.password = await bcrypt.hash(newPassword, this.SALT_ROUND);
-    await userRepo.save(user);
+    await userService.save(user);
 
     // Burn the token
-    await otpRepo.delete({ id: valid.id });
+    await otpService.remove({ id: valid.id });
 
     // Logout everywhere
-    await sessionRepo.update(
+    await sessionsService.update(
       { userId: user.id, revokedAt: IsNull() },
       { revokedAt: new Date() },
     );

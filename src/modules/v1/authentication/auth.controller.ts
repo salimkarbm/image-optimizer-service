@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { STATUS_CODE, SUCCESS_MESSAGE } from '../../../shared/constants';
-import { AuthService } from './auth.service';
+import { AuthService } from './authentication.service';
 import { HttpResponse } from '../../../shared/utils';
 import { ENVIRONMENT } from '../../../config/environment';
 

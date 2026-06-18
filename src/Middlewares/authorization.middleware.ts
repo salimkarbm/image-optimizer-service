@@ -1,26 +1,22 @@
-// export const authorize =
-//   (
-//     permission:
-//       Permission,
-//   ) =>
-//   (
-//     req,
-//     res,
-//     next,
-//   ) => {
+import { NextFunction, Request, Response } from 'express';
+import { Permission } from '../modules/v1/permissions/entities/permission.entity';
+import AppError from 'src/shared/utils/errors/appError';
+import { STATUS_CODE } from 'src/shared/constants';
+import authorizationService from '../modules/v1/authorization/authorization.service';
 
-//     const permissions =
-//       ROLE_PERMISSIONS[
-//         req.membership.role
-//       ];
+export const authorize =
+  (permission: Permission['id']) =>
+  (
+    req: Request & { membership: { role: string } },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { role } = req?.membership;
+    const allowed = authorizationService.hasPermission(role, permission);
 
-//     if (
-//       !permissions.includes(
-//         permission,
-//       )
-//     ) {
-//       throw new ForbiddenError();
-//     }
+    if (!allowed) {
+      throw new AppError('Unauthorized', STATUS_CODE.FORBIDDEN);
+    }
 
-//     next();
-//   };
+    next();
+  };
