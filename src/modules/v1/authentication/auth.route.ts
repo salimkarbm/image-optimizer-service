@@ -23,12 +23,14 @@ import {
   login,
   logout,
   logoutAll,
+  me,
   refreshToken,
   resendOtp,
   resetPassword,
   signUp,
   verifyEmail,
 } from './auth.controller';
+import { authenticate } from '../../../middlewares/authentication.middleware';
 
 const router = Router();
 
@@ -83,6 +85,12 @@ router.post(
   '/auth/reset-password',
   validateInputWithZod(resetPasswordSchema, resetPasswordSchemaRules),
   resetPassword,
+);
+
+router.get(
+  '/auth/me',
+   authenticate,
+  me,
 );
 
 export default router;

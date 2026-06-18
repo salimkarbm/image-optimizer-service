@@ -21,8 +21,9 @@ import {
 import { auditEvents } from '../audit/audit.service';
 import userService from '../users/users.service';
 import emailService from '../../../shared/services/email.service';
-import otpService from '../otps/otp.service';
+import otpService from '../otp/otp.service';
 import sessionsService from '../sessions/sessions.service';
+import { RequestContext } from 'src/shared/types/request/request';
 
 export class AuthService {
   private readonly RESET_TOKEN_VALIDITY_MINUTES = 60;
@@ -718,6 +719,16 @@ export class AuthService {
       { userId: user.id, revokedAt: IsNull() },
       { revokedAt: new Date() },
     );
+    return user;
+  };
+
+  me = async (req:RequestContext): Promise<Partial<User>> => {
+    const user = {
+      id: req?.user?.id,
+      email: req?.user?.email,
+      firstName: req?.user?.firstName,
+      lastName: req?.user?.lastName,
+    };
     return user;
   };
 }

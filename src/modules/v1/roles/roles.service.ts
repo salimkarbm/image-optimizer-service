@@ -99,12 +99,11 @@ export class RolesService {
     return this.roleRepository.delete(options);
   }
 
-  async softDelete( where: FindOptionsWhere<Role>) {
+  async softDelete(where: FindOptionsWhere<Role>) {
     const res = await this.roleRepository.softDelete(where);
     return {
       status: !!res.status,
     };
-
   }
 
   async save(session: Role): Promise<Role> {

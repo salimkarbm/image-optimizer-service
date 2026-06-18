@@ -3,6 +3,7 @@ import { STATUS_CODE, SUCCESS_MESSAGE } from '../../../shared/constants';
 import { AuthService } from './authentication.service';
 import { HttpResponse } from '../../../shared/utils';
 import { ENVIRONMENT } from '../../../config/environment';
+import { RequestContext } from 'src/shared/types/request/request';
 
 const authService = new AuthService();
 export const signUp = async (
@@ -63,7 +64,7 @@ export const login = async (
 ) => {
   try {
     const result = await authService.login(req);
-
+    console.log('result', result.accessToken); 
     // Web: HTTP-only cookie (most secure)
     if (!req.isMobile) {
       res.cookie('token', result.accessToken, {
@@ -218,6 +219,20 @@ export const resetPassword = async (
       response: res,
       status: STATUS_CODE.OK,
       message: SUCCESS_MESSAGE.RESET_PASSWORD,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const me = async (req: RequestContext, res: Response, next: NextFunction) => {
+  try {
+    const data = await authService.me(req);
+    return HttpResponse({
+      response: res,
+      data,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.FETCHED('User'),
     });
   } catch (err) {
     return next(err);

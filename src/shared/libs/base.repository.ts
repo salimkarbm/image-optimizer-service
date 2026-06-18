@@ -200,12 +200,12 @@ export default abstract class BaseRepository<T extends BaseEntity> {
     };
   }
 
- async softDelete( where: FindOptionsWhere<T>) {
+  async softDelete(where: FindOptionsWhere<T>) {
     const res = await this.entity.softDelete(where);
     return {
       status: !!res.affected,
     };
- }
+  }
 
   /**
    * Full text-like search across multiple columns using LIKE.

@@ -440,3 +440,27 @@
  *       500:
  *         description: Internal server error.
  */
+
+/**
+ * @openapi
+ * /v1/auth/me:
+ *   get:
+ *     summary: Get current user
+ *     description: Retrieves the details of the currently authenticated user.
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: User details fetched successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       type: string
+ *                       example: "User ID"
+ */

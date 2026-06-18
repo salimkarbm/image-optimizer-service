@@ -2,14 +2,16 @@ import { STATUS_CODE } from '../shared/constants';
 import AppError from '../shared/utils/errors/appError';
 import { Request, Response, NextFunction } from 'express';
 import jwtService from '../shared/services/jwt.service';
-import userRepository from '../infrastructure/repositories/user/user.repository';
 import { JwtPayload } from 'jsonwebtoken';
+import userService from '../modules/v1/users/users.service';
+import { RequestContext } from '../shared/types/request/request';
 
 export const authenticate = async (
-  req: Request,
+  req: RequestContext,
   res: Response,
   next: NextFunction,
 ) => {
+  try{
   const token = jwtService.extractToken(req);
 
   if (!token) {
@@ -18,7 +20,7 @@ export const authenticate = async (
 
   const payload: JwtPayload = jwtService.verifyToken(token);
 
-  const user = await userRepository.findOne({
+  const user = await userService.findOne({
     where: {
       id: payload.sub,
     },
@@ -31,4 +33,7 @@ export const authenticate = async (
   req.user = user;
 
   next();
+  } catch (err) {
+    return next(err);
+  }
 };
