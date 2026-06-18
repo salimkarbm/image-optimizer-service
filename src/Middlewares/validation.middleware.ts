@@ -36,7 +36,11 @@ export const validateInputWithZod =
   ) =>
   (req: Request, res: Response, next: NextFunction): void => {
     try {
-      const parsedData = schema.parse(req.body);
+      const parsedData = schema.parse({
+        ...req.body,
+        ...req.params,
+        ...req.query,
+      });
 
       // Apply sanitization if defined
       if (sanitizeRules) {

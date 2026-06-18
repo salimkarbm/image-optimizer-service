@@ -722,7 +722,7 @@ export class AuthService {
     return user;
   };
 
-  me = async (req:RequestContext): Promise<Partial<User>> => {
+  me = async (req: RequestContext): Promise<Partial<User>> => {
     const user = {
       id: req?.user?.id,
       email: req?.user?.email,

@@ -38,13 +38,7 @@ export class RolesService {
 
   async getAllRoles() {
     const roles = await rolesRepo.findAll();
-    if (roles) {
-      return roles;
-    }
-    throw new AppError(
-      'Error occur while getting roles',
-      STATUS_CODE.INTERNAL_SERVER_ERROR,
-    );
+    return roles;
   }
 
   canManageRole(actorRole: SystemRole, targetRole: SystemRole): boolean {
@@ -106,8 +100,8 @@ export class RolesService {
     };
   }
 
-  async save(session: Role): Promise<Role> {
-    return this.roleRepository.save(session);
+  async save(role: Role): Promise<Role> {
+    return this.roleRepository.save(role);
   }
 }
 

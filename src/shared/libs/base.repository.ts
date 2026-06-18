@@ -9,6 +9,7 @@ import {
   SelectQueryBuilder,
   QueryDeepPartialEntity,
   UpdateResult,
+  EntityManager,
 } from 'typeorm';
 import BaseEntity from '../../infrastructure/repositories/base.entity';
 import { STATUS_CODE } from '../constants';
@@ -314,7 +315,7 @@ export default abstract class BaseRepository<T extends BaseEntity> {
     return this.entity.count(options);
   }
 
-  async createQueryBuilder(alias?: string) {
+  createQueryBuilder(alias?: string) {
     return this.entity.createQueryBuilder(alias);
   }
 

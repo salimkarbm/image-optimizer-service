@@ -87,10 +87,6 @@ router.post(
   resetPassword,
 );
 
-router.get(
-  '/auth/me',
-   authenticate,
-  me,
-);
+router.get('/auth/me', authenticate, me);
 
 export default router;

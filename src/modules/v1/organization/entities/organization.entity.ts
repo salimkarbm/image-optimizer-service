@@ -1,6 +1,6 @@
-import { Entity, Column } from 'typeorm';
-import User from '../../users/entities/user.entity';
+import { Entity, Column, BeforeInsert } from 'typeorm';
 import BaseEntity from '../../../../infrastructure/repositories/base.entity';
+import slugify from 'slugify';
 
 @Entity({ name: 'organizations', schema: 'public' })
 export class Organization extends BaseEntity {
@@ -9,4 +9,14 @@ export class Organization extends BaseEntity {
 
   @Column()
   name!: string;
+
+  @BeforeInsert()
+  generateSlug() {
+    if (!this.slug && this.name) {
+      this.slug = slugify(this.name, {
+        lower: true,
+        strict: true,
+      });
+    }
+  }
 }

@@ -156,6 +156,17 @@ const swaggerOptions: swaggerJsdoc.Options = {
             },
           },
         },
+        Organization: {
+          type: 'object',
+          required: ['name'],
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Organization name',
+              example: 'My Organization',
+            },
+          },
+        },
         CreateUserRequest: {
           type: 'object',
           required: ['email', 'password', 'firstName', 'lastName', 'username'],

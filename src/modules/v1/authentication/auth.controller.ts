@@ -64,7 +64,7 @@ export const login = async (
 ) => {
   try {
     const result = await authService.login(req);
-    console.log('result', result.accessToken); 
+    console.log('result', result.accessToken);
     // Web: HTTP-only cookie (most secure)
     if (!req.isMobile) {
       res.cookie('token', result.accessToken, {
@@ -225,7 +225,11 @@ export const resetPassword = async (
   }
 };
 
-export const me = async (req: RequestContext, res: Response, next: NextFunction) => {
+export const me = async (
+  req: RequestContext,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const data = await authService.me(req);
     return HttpResponse({

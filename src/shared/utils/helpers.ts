@@ -158,7 +158,7 @@ export const getSwaggerOptions = {
       }
       return res;
     },
-    // persistAuthorization: true,
+    persistAuthorization: true,
     displayRequestDuration: true,
     filter: true,
     showCommonExtensions: true,

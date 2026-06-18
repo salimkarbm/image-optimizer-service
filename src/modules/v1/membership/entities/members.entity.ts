@@ -22,5 +22,9 @@ export class Membership extends BaseEntity {
   organizationId!: string;
 
   @ManyToOne(() => Role)
+  @JoinColumn({ name: 'roleId' })
   role!: Role;
+
+  @Column({ type: 'uuid' })
+  roleId!: string;
 }
