@@ -1,15 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
-import { membershipRepo } from 'src/infrastructure/repositories/membership.repository';
-import { STATUS_CODE } from 'src/shared/constants';
+import { STATUS_CODE } from '../shared/constants';
 import AppError from '../shared/utils/errors/appError';
+import membershipService from '../modules/v1/membership/membership.service';
+import { RequestContext } from 'src/shared/types/request/request';
 export const loadMembership = async (
-  req: Request,
+  req: RequestContext,
   res: Response,
   next: NextFunction,
 ) => {
-  const membership = await membershipRepo.findOne({
+  const membership = await membershipService.findOne({
     where: {
-      userId: req.user.id,
+      userId: req?.user?.id,
       organizationId: req?.organization?.id,
     },
   });

@@ -8,14 +8,19 @@ import membershipService, {
   MembershipService,
 } from '../membership/membership.service';
 import { Membership } from '../membership/entities/members.entity';
+import { RequestContext } from '../../../shared/types/request/request';
+import permissionsService, {
+  PermissionsService,
+} from '../permissions/permission.service';
 
 export class OrganizationsService {
   constructor(
     private readonly organizationRepository: typeof organizationRepo,
     private readonly dataSource: typeof AppDataSource,
     private readonly membershipService: MembershipService,
+    private readonly permissionsService: PermissionsService,
   ) {}
-  async createOrganization(userId: string, dto: CreateOrganizationDto) {
+  async createOrganization(cxt: RequestContext, dto: CreateOrganizationDto) {
     return this.dataSource.transaction(async (manager) => {
       const organization = manager.create(Organization, {
         name: dto.name,
@@ -25,7 +30,7 @@ export class OrganizationsService {
 
       await this.membershipService.createOwnerMembership(
         manager,
-        userId,
+        cxt.user!.id,
         organization.id,
       );
 
@@ -33,10 +38,22 @@ export class OrganizationsService {
     });
   }
 
-  findOrganization(organizationId: string) {
-    return this.findOne({
+  async findOrganization(organizationId: string) {
+    return await this.findOne({
       where: { id: organizationId },
     });
+  }
+
+  async getOrganizationContext(cxt: RequestContext) {
+    const permissions = await this.permissionsService.getRolePermissions(
+      cxt.membership?.roleId.toString()!,
+    );
+    return {
+      user: cxt.user,
+      organization: cxt.organization,
+      membership: cxt.membership,
+      permissions: permissions,
+    };
   }
 
   async findById(id: string) {
@@ -132,5 +149,6 @@ const organizationService = new OrganizationsService(
   organizationRepo,
   AppDataSource,
   membershipService,
+  permissionsService,
 );
 export default organizationService;

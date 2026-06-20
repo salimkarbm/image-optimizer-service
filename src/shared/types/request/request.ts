@@ -4,7 +4,7 @@ import { Organization } from '../../../modules/v1/organization/entities/organiza
 import User from '../../../modules/v1/users/entities/user.entity';
 import { Request } from 'express';
 
-export interface RequestContext extends Request {
+export interface RequestContext {
   user?: User;
   organization?: Organization;
   membership?: Membership;

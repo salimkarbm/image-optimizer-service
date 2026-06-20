@@ -3,7 +3,7 @@ import { STATUS_CODE, SUCCESS_MESSAGE } from '../../../shared/constants';
 import { AuthService } from './authentication.service';
 import { HttpResponse } from '../../../shared/utils';
 import { ENVIRONMENT } from '../../../config/environment';
-import { RequestContext } from 'src/shared/types/request/request';
+import { getContext } from '../../../shared/context/get-context';
 
 const authService = new AuthService();
 export const signUp = async (
@@ -225,13 +225,10 @@ export const resetPassword = async (
   }
 };
 
-export const me = async (
-  req: RequestContext,
-  res: Response,
-  next: NextFunction,
-) => {
+export const me = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await authService.me(req);
+    const cxt = getContext(req);
+    const data = await authService.me(cxt);
     return HttpResponse({
       response: res,
       data,

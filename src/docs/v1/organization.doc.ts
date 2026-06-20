@@ -98,3 +98,62 @@
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
+
+/**
+ * @openapi
+ * /v1/organizations/{organizationId}/context:
+ *   get:
+ *     summary: Get organization context
+ *     tags: [Organization]
+ *     parameters:
+ *       - name: organizationId
+ *         in: path
+ *         description: Organization ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Organization context
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     organization:
+ *                       type: object
+ *                       properties:
+ *                         user:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: string
+ *                               example: "User ID"
+ *                             email:
+ *                               type: string
+ *                               example: "User email"
+ *                         organization:
+ *                            type: object
+ *                            properties:
+ *                              id:
+ *                                type: string
+ *                                example: "Organization ID"
+ *                              name:
+ *                                type: string
+ *                                example: "Organization Name"
+ *                         membership:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "Membership ID"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */

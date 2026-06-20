@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { validateInputWithZod } from '../../../middlewares';
-import { create, find, listByUser } from './organization.controller';
+import {
+  context,
+  create,
+  getOrganization,
+  listByUser,
+} from './organization.controller';
 import {
   createOrganizationSchema,
   createOrganizationSchemaRules,
@@ -10,6 +15,8 @@ import {
   GetOrganizationSchema,
   GetOrganizationSchemaRules,
 } from './validations/fetch-organization';
+import { loadOrganization } from '../../../middlewares/load-organization.middleware';
+import { loadMembership } from '../../../middlewares/load-membership.middleware';
 
 const router = Router();
 
@@ -30,6 +37,17 @@ router
   .get(
     validateInputWithZod(GetOrganizationSchema, GetOrganizationSchemaRules),
     authenticate,
-    find,
+    loadOrganization,
+    loadMembership,
+    getOrganization,
   );
+
+router.get(
+  '/organizations/:organizationId/context',
+  validateInputWithZod(GetOrganizationSchema, GetOrganizationSchemaRules),
+  authenticate,
+  loadOrganization,
+  loadMembership,
+  context,
+);
 export default router;

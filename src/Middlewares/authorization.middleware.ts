@@ -1,22 +1,19 @@
 import { NextFunction, Request, Response } from 'express';
 import { Permission } from '../modules/v1/permissions/entities/permission.entity';
-import AppError from 'src/shared/utils/errors/appError';
-import { STATUS_CODE } from 'src/shared/constants';
-import authorizationService from '../modules/v1/authorization/authorization.service';
+import { AuthorizationService } from '../modules/v1/authorization/authorization.service';
+import { SystemRole } from '../modules/v1/roles/entities/roles.entity';
 
+//Very thin.That's intentional.
 export const authorize =
-  (permission: Permission['id']) =>
   (
-    req: Request & { membership: { role: string } },
-    res: Response,
-    next: NextFunction,
-  ) => {
-    const { role } = req?.membership;
-    const allowed = authorizationService.hasPermission(role, permission);
-
-    if (!allowed) {
-      throw new AppError('Unauthorized', STATUS_CODE.FORBIDDEN);
-    }
+    authorizationService: AuthorizationService,
+    permission: Permission | string,
+  ) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    authorizationService.requirePermission(
+      req.membership!.role.name as SystemRole,
+      permission,
+    );
 
     next();
   };

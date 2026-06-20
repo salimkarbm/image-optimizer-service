@@ -1,17 +1,19 @@
-import { NextFunction, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { RequestContext } from '../../../shared/types/request/request';
 import { STATUS_CODE, SUCCESS_MESSAGE } from '../../../shared/constants';
 import { HttpResponse } from '../../../shared/utils';
 import organizationService from './organization.service';
+import { getContext } from '../../../shared/context/get-context';
 
 export const create = async (
-  req: RequestContext,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
+    const ctx: RequestContext = getContext(req);
     const organization = await organizationService.createOrganization(
-      req.user!.id,
+      ctx,
       req.body,
     );
     return HttpResponse({
@@ -45,8 +47,8 @@ export const listByUser = async (
   }
 };
 
-export const find = async (
-  req: RequestContext,
+export const getOrganization = async (
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -62,5 +64,20 @@ export const find = async (
     });
   } catch (err) {
     return next(err);
+  }
+};
+
+export const context = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+  const ctx = getContext(req);
+  const context = await organizationService.getOrganizationContext(ctx);
+  return HttpResponse({
+    response: res,
+    data: context,
+    status: STATUS_CODE.OK,
+    message: SUCCESS_MESSAGE.FETCHED('Context'),
+  });
+  } catch (err) {
+   return next(err);
   }
 };

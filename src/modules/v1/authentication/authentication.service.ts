@@ -23,7 +23,7 @@ import userService from '../users/users.service';
 import emailService from '../../../shared/services/email.service';
 import otpService from '../otp/otp.service';
 import sessionsService from '../sessions/sessions.service';
-import { RequestContext } from 'src/shared/types/request/request';
+import { RequestContext } from '../../../shared/types/request/request';
 
 export class AuthService {
   private readonly RESET_TOKEN_VALIDITY_MINUTES = 60;
@@ -722,12 +722,12 @@ export class AuthService {
     return user;
   };
 
-  me = async (req: RequestContext): Promise<Partial<User>> => {
+  me = async (cxt: RequestContext): Promise<Partial<User>> => {
     const user = {
-      id: req?.user?.id,
-      email: req?.user?.email,
-      firstName: req?.user?.firstName,
-      lastName: req?.user?.lastName,
+      id: cxt?.user?.id,
+      email: cxt?.user?.email,
+      firstName: cxt?.user?.firstName,
+      lastName: cxt?.user?.lastName,
     };
     return user;
   };

@@ -8,6 +8,7 @@ import { RolePermission } from './entities/role-permissions.entity';
 import { Permission } from './entities/permission.entity';
 import { FindManyOptions, FindOneOptions, FindOptionsWhere } from 'typeorm';
 import { PaginatedQuery } from '../../../shared/types';
+import { Role } from '../roles/entities/roles.entity';
 
 export class PermissionsService {
   constructor(private readonly permissionRepository: typeof permissionsRepo) {}
@@ -48,6 +49,18 @@ export class PermissionsService {
     if (permissions) {
       return permissions;
     }
+  }
+
+  async getRolePermissions(roleId: string) {
+    const perms = await this.permissionRepository
+      .createQueryBuilder('p')
+      .select(['p.id', 'p.key', 'p.action', 'p.resource', 'p.description'])
+      .innerJoin(RolePermission, 'rp', 'rp.permissionId = p.id')
+      .innerJoin(Role, 'r', 'r.id = rp.roleId')
+      .where('r.id = :id', { id: roleId })
+      .getMany();
+
+    return perms;
   }
 
   async createRolePermission(req: Request) {

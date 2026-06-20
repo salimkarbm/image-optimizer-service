@@ -1,8 +1,7 @@
 import 'dotenv/config';
-
 import { NextFunction, Request, Response } from 'express';
-
 import AppError from '../../shared/utils/errors/appError';
+import { ENVIRONMENT } from '../../config/environment';
 
 export const sendErrorDev = (err: AppError, res: Response) => {
   const statusCode = err.statusCode || 500;
@@ -35,10 +34,10 @@ export const errorHandler = (
 ): unknown => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
-  if (process.env.ENV === 'development') {
+  if (ENVIRONMENT.APP.env === 'development') {
     sendErrorDev(err, res);
   }
-  if (process.env.ENV === 'production') {
+  if (ENVIRONMENT.APP.env === 'production') {
     sendErrorProd(err, res);
     const error = { ...err };
     if (error.name === 'ExpiredCodeException') {

@@ -31,6 +31,8 @@ import {
   verifyEmail,
 } from './auth.controller';
 import { authenticate } from '../../../middlewares/authentication.middleware';
+import { loadOrganization } from '../../../middlewares/load-organization.middleware';
+import { loadMembership } from '../../../middlewares/load-membership.middleware';
 
 const router = Router();
 

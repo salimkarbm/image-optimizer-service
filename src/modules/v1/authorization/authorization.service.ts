@@ -1,29 +1,145 @@
 import { rolePermissionsRepo } from 'src/infrastructure/repositories/role-permissions.repository';
 import { Permission } from '../permissions/entities/permission.entity';
 import { RolePermission } from '../permissions/entities/role-permissions.entity';
+import AppError from 'src/shared/utils/errors/appError';
+import {
+  Role,
+  ROLE_PRIORITY,
+  SystemRole,
+} from '../roles/entities/roles.entity';
+import { STATUS_CODE } from '../../../shared/constants';
 
 export class AuthorizationService {
   constructor() {}
+  // async hasPermission(
+  //   role: SystemRole,
+  //   permission: Permission,
+  // ): Promise<boolean> {
+  // const rolePermissions: Pick<RolePermission, 'permissionId'>[] =
+  // await rolePermissionsRepo.findAll({
+  //   where: {
+  //     roleId: role.toLowerCase(),
+  //   },
+  //   select: {
+  //     permissionId: true,
+  //   },
+  // });
+  // // Extract just the IDs into a string[]
+  // const permissionIds: Permission['id'][] = rolePermissions.map(
+  //   (rp) => rp.permissionId,
+  // );
+  // return permissionIds.includes(permission);
+  //}
+
+  /*
+   Sync version if you cache permissions at login
+   Best for middleware — no async DB hit per request.
+  */
+
+  // When user logs in, load all permission names once
+  //const userPermissions = new Set<string>(['users.read', 'orgs.write']); // from DB
+
+  // hasPermission(
+  //   userPermissions: Set<string>,
+  //   permission: string
+  // ): boolean {
+  //   return userPermissions.has(permission);
+  // }
+
+  // // In middleware
+  // if (!hasPermission(req.user.permissions, 'users.delete')) {
+  //   throw new ForbiddenException();
+  // }
+
+  /*
+    If you have roleName instead of roleId
+  */
+  // async hasPermission(
+  //   roleName: string,
+  //   permissionName: string
+  // ): Promise<boolean> {
+  //   const exists = await this.dataSource
+  //     .getRepository(RolePermission)
+  //     .createQueryBuilder("rp")
+  //     .innerJoin(Role, "role", "role.id = rp.roleId")
+  //     .innerJoin(Permission, "perm", "perm.id = rp.permissionId")
+  //     .where("role.name = :roleName", { roleName })
+  //     .andWhere("perm.name = :permissionName", { permissionName })
+  //     .getExists(); // TypeORM 0.3+
+
+  //   return exists;
+  // }
+
+  /*
+     If you need to query the DB using RolePermission
+  */
+  // async hasPermission(
+  //     roleId: string,
+  //     permissionName: string
+  //   ): Promise<boolean> {
+  //     const count = await this.dataSource
+  //       .getRepository(RolePermission)
+  //       .createQueryBuilder("rp")
+  //       .innerJoin(Role, "role", "role.id = rp.roleId")
+  //       .innerJoin(Permission, "perm", "perm.id = rp.permissionId")
+  //       .where("role.id = :roleId", { roleId })
+  //       .andWhere("perm.name = :permissionName", { permissionName })
+  //       .getCount();
+
+  //     return count > 0;
+  //   }
+  // }
+
+  // // Usage
+  // const canDelete = await permissionService.hasPermission(userRoleId, 'users.delete');
+
+  /*
+If you already have permissions on the role object
+This is fastest — no DB call. Assumes your SystemRole has permissions: Permission[] or rolePermissions loaded.
+*/
+
+  // type Permission = { id: string; name: string };
+  // hasPermission(
+  //   role: SystemRole & { permissions: Permission[] },
+  //   permission: Permission
+  // ): boolean {
+  //   return role.permissions.some(p => p.id === permission.id || p.name === permission.name);
+  // }
+
   async hasPermission(
-    roleId: RolePermission['roleId'],
-    permission: Permission['id'],
+    roleName: SystemRole | string,
+    permission: Permission | string,
   ): Promise<boolean> {
-    const rolePermissions: Pick<RolePermission, 'permissionId'>[] =
-      await rolePermissionsRepo.findAll({
-        where: {
-          roleId: roleId.toString(),
-        },
-        select: {
-          permissionId: true,
-        },
-      });
+    const exists = await rolePermissionsRepo
+      .createQueryBuilder('rp')
+      .innerJoin(Role, 'role', 'role.id = rp.roleId')
+      .innerJoin(Permission, 'perm', 'perm.id = rp.permissionId')
+      .where('role.name = :roleName', { roleName })
+      .andWhere('perm.name = :permissionName', { permissionName: permission })
+      .getExists(); // TypeORM 0.3+
+    return exists;
+  }
 
-    // Extract just the IDs into a string[]
-    const permissionIds: Permission['id'][] = rolePermissions.map(
-      (rp) => rp.permissionId,
-    );
+  requirePermission(role: SystemRole, permission: Permission | string): void {
+    const allowed = this.hasPermission(role, permission);
 
-    return permissionIds.includes(permission);
+    if (!allowed) {
+      throw new AppError('Insufficient permissions', STATUS_CODE.FORBIDDEN);
+    }
+  }
+
+  isOwner(role: SystemRole): boolean {
+    return role === SystemRole.OWNER;
+  }
+
+  canManageRole(actorRole: SystemRole, targetRole: SystemRole): boolean {
+    return ROLE_PRIORITY[actorRole] > ROLE_PRIORITY[targetRole];
+  }
+
+  requireRoleManagement(actorRole: SystemRole, targetRole: SystemRole): void {
+    if (!this.canManageRole(actorRole, targetRole)) {
+      throw new AppError('Cannot manage this role', STATUS_CODE.FORBIDDEN);
+    }
   }
 }
 

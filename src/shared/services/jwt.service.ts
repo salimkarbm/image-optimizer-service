@@ -43,18 +43,18 @@ class JwtService {
   }
 
   async verifyToken(token: string): Promise<JwtPayload> {
-    try {
-      const decoded = jwt.verify(token, this.secretKey);
-      if (typeof decoded === 'string') {
-        throw new AppError('Invalid token payload', STATUS_CODE.UNAUTHORIZED);
-      }
-      return decoded;
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new AppError('Token expired', STATUS_CODE.UNAUTHORIZED);
-      }
-      throw new AppError('Invalid token', STATUS_CODE.UNAUTHORIZED);
+    // try {
+    const decoded = jwt.verify(token, this.secretKey);
+    if (typeof decoded === 'string') {
+      throw new AppError('Invalid token payload', STATUS_CODE.UNAUTHORIZED);
     }
+    return decoded;
+    // } catch (error) {
+    //   if (error instanceof jwt.TokenExpiredError) {
+    //     throw new AppError('Token expired', STATUS_CODE.UNAUTHORIZED);
+    //   }
+    //   throw new AppError('Invalid token', STATUS_CODE.UNAUTHORIZED);
+    // }
   }
 
   extractToken(req: Request): string | null {

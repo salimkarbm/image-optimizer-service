@@ -14,6 +14,7 @@ export const ROLE_PRIORITY = {
   EDITOR: 2,
   VIEWER: 1,
 } as const;
+
 @Entity({ name: 'roles', schema: 'public' })
 export class Role extends BaseEntity {
   @Column({ unique: true })
