@@ -73,3 +73,28 @@ export const listInvitations = async (
     return next(err);
   }
 };
+
+export const cancelInvitation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ctx = getContext(req);
+    if (req.params.organizationId !== ctx.organization?.id) {
+      throw new AppError('Organization not found', STATUS_CODE.NOT_FOUND);
+    }
+    const invitation = await invitationService.cancelInvitation(
+      ctx?.organization?.id!,
+      req.body.email,
+    );
+    return HttpResponse({
+      response: res,
+      data: invitation,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.DELETED('Invitation'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

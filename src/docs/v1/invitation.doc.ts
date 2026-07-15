@@ -144,3 +144,52 @@
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
+
+/**
+ * @openapi
+ * /v1/organizations/{organizationId}/invitations/{invitationId}:
+ *   delete:
+ *     summary: Cancel an invitation
+ *     tags: [Invitation]
+ *     parameters:
+ *       - name: organizationId
+ *         in: path
+ *         description: Organization ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: invitationId
+ *         in: path
+ *         description: Invitation ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string 
+ *     responses:
+ *       200:
+ *         description: Invitation canceled successfully.
+ *         content: 
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invitation canceled successfully"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */

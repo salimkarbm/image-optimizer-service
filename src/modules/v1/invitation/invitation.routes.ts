@@ -7,6 +7,7 @@ import authorizationService from '../authorization/authorization.service';
 import { Permission } from '../../../shared/enums/permission.enum';
 import {
   acceptInvitation,
+  cancelInvitation,
   createInvitation,
   listInvitations,
 } from './invitation.controller';
@@ -57,6 +58,20 @@ router.get(
   authorize(authorizationService, Permission.MEMBER_INVITE),
 
   listInvitations,
+);
+
+router.delete(
+  '/organizations/:organizationId/invitations/:invitationId',
+
+  authenticate,
+
+  loadOrganization,
+
+  loadMembership,
+
+  authorize(authorizationService, Permission.MEMBER_INVITE),
+
+  cancelInvitation
 );
 
 export default router;

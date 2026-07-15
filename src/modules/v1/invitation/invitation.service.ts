@@ -136,6 +136,7 @@ export class InvitationService {
     return this.invitationRepository.delete({
       organizationId,
       email,
+      acceptedAt: IsNull(),
     });
   }
 
