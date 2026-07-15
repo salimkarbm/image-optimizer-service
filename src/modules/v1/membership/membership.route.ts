@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../../middleware/authentication.middleware';
 import {
-  // leaveOrganization,
+  leaveOrganization,
   listMembers,
   removeMember,
   updateRole,
@@ -16,6 +16,14 @@ import {
 import { authorize } from '../../../middleware/authorization.middleware';
 import authorizationService from '../authorization/authorization.service';
 import { Permission } from '../../../shared/enums/permission.enum';
+import {
+  GetMembershipSchema,
+  GetMembershipSchemaRules,
+} from './validations/fetch-member';
+import {
+  GetOrganizationSchema,
+  GetOrganizationSchemaRules,
+} from '../organization/validations/fetch-organization';
 
 const router = Router();
 
@@ -32,6 +40,7 @@ router
     updateRole,
   )
   .delete(
+    validateInputWithZod(GetMembershipSchema, GetMembershipSchemaRules),
     authenticate,
     loadOrganization,
     loadMembership,
@@ -39,8 +48,13 @@ router
     removeMember,
   );
 
-// router
-//   .route('/organizations/:organizationId/leave')
-//   .post(authenticate, loadOrganization, leaveOrganization);
+router
+  .route('/organizations/:organizationId/leave')
+  .post(
+    validateInputWithZod(GetOrganizationSchema, GetOrganizationSchemaRules),
+    authenticate,
+    loadOrganization,
+    leaveOrganization,
+  );
 
 export default router;

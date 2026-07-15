@@ -168,18 +168,18 @@ export class MembershipService {
     await this.remove(target);
   }
 
-  // async leaveOrganization(ctx: RequestContext) {
-  //   if (ctx.membership?.role === SystemRole.OWNER) {
-  //     throw new AppError(
-  //       'Cannot leave until ownership transferred',
-  //       STATUS_CODE.FORBIDDEN,
-  //     );
-  //   }
-  //   return this.membershipRepository.delete({
-  //     organizationId: ctx.organization?.id,
-  //     userId: ctx.user?.id,
-  //   });
-  // }
+  async leaveOrganization(ctx: RequestContext) {
+    if (ctx.membership?.role === SystemRole.OWNER) {
+      throw new AppError(
+        'Cannot leave until ownership transferred',
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+    return this.membershipRepository.delete({
+      organizationId: ctx.organization?.id,
+      userId: ctx.user?.id,
+    });
+  }
 
   async create(permission: Partial<Membership>) {
     const newPermission = this.membershipRepository.create(permission);

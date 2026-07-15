@@ -4,8 +4,7 @@ import { z } from 'zod';
 
 export const GetMembershipSchema = z.object({
   membershipId: z.string().nonempty().min(3).max(50),
-  // .transform((val) => validator.escape(val)) // escapes <, >, &, ", '
-  // .transform((val) => xss(val)), // strips disallowed HTML
+  organizationId: z.string().nonempty().min(3).max(50),
 });
 
 export const GetMembershipSchemaRules: Record<
@@ -13,4 +12,5 @@ export const GetMembershipSchemaRules: Record<
   Array<'trim' | 'escape' | 'xss'>
 > = {
   membershipId: ['trim', 'escape', 'xss'],
+  organizationId: ['trim', 'escape', 'xss'],
 };

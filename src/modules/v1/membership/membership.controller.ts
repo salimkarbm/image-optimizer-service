@@ -75,21 +75,24 @@ export const removeMember = async (
   }
 };
 
-// export const leaveOrganization = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-//     const ctx = getContext(req);
-//     const members = await membershipService.leaveOrganization(ctx);
-//     return HttpResponse({
-//       response: res,
-//       data: members,
-//       status: STATUS_CODE.OK,
-//       message: SUCCESS_MESSAGE.DELETED('Member'),
-//     });
-//   } catch (err) {
-//     return next(err);
-//   }
-// };
+export const leaveOrganization = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ctx = getContext(req);
+    if (req.params.organizationId !== ctx.organization?.id) {
+      throw new AppError('Organization not found', STATUS_CODE.NOT_FOUND);
+    }
+    const members = await membershipService.leaveOrganization(ctx);
+    return HttpResponse({
+      response: res,
+      data: members,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.DELETED('Member'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
