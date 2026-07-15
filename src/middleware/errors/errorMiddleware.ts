@@ -6,24 +6,29 @@ import { ENVIRONMENT } from '../../config/environment';
 export const sendErrorDev = (err: AppError, res: Response) => {
   const statusCode = err.statusCode || 500;
   return res.status(statusCode).json({
-    success: err.statusCode,
+    success: false,
     message: err.message,
-    error: err,
-    stack: err.stack,
+    error: err.message,
     name: err.name,
+    stack: err.stack,
   });
 };
 
 export const sendErrorProd = (err: AppError, res: Response) => {
   const statusCode = err.statusCode || 500;
+  // Always send something in prod, not only when isOperational
   if (err.isOperational) {
     return res.status(statusCode).json({
       success: false,
       message: err.message,
-      name: err.name,
-      operation: err.isOperational,
     });
   }
+  // programming error - don't leak details
+  console.error('ERROR 💥', err);
+  return res.status(500).json({
+    success: false,
+    message: `This wasn't supposed to happen Our engineers are working on it. How about a fresh start?`,
+  });
 };
 
 export const errorHandler = (
@@ -33,59 +38,40 @@ export const errorHandler = (
   next: NextFunction,
 ): unknown => {
   if (res.headersSent) {
-    // response already sent, don't try to send again
     return next(err);
   }
+
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
-  if (ENVIRONMENT.APP.env === 'development') {
-    sendErrorDev(err, res);
-  }
-  if (ENVIRONMENT.APP.env === 'production') {
-    sendErrorProd(err, res);
-    const error = { ...err };
-    if (error.name === 'ExpiredCodeException') {
-      const { message } = error;
-      const status = error.statusCode || 401;
-      return res.status(status).json({
-        success: false,
-        message,
-      });
-    }
-    if (error.name === 'Error') {
-      res.status(error.statusCode || 401);
-      return res.json({
-        success: false,
-        message: error.message,
-      });
-    }
-    if (error.name === 'NotAuthorizedException') {
-      const status = error.statusCode || 401;
-      return res.status(status).json({
-        success: false,
-        error: error.message,
-      });
-    }
-    if (err?.message === 'Not allowed by CORS') {
-      return res.status(403).json({
-        success: false,
-        error: 'CORS policy violation',
-        message: 'Origin not allowed',
-      });
-    }
-    if (error.name === 'TokenExpiredError') {
-      const status = error.statusCode || 401;
-      return res.status(status).json({
-        success: false,
-        error: error.message,
-      });
-    }
-  } else {
-    return res.status(err.statusCode || 400).json({
+
+  // Special cases first - before dev/prod split
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
       success: false,
-      error: err.message,
-      message:
-        "This wasn't supposed to happen Our engineers are working on it. How about a fresh start?",
+      error: 'CORS policy violation',
+      message: 'Origin not allowed',
     });
   }
+
+  if (
+    [
+      'ExpiredCodeException',
+      'NotAuthorizedException',
+      'TokenExpiredError',
+      'JsonWebTokenError',
+      'Error',
+    ].includes(err.name)
+  ) {
+    return res.status(err.statusCode || 401).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
+  if (ENVIRONMENT.APP.env === 'development') {
+    return sendErrorDev(err, res);
+  }
+
+  // production
+  return sendErrorProd(err, res);
 };

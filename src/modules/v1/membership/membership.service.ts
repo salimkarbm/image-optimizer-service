@@ -146,6 +146,41 @@ export class MembershipService {
     return this.membershipRepository.save(target);
   }
 
+  async removeMember(ctx: RequestContext, membershipId: string) {
+    const target = await this.findById(membershipId);
+
+    if (!target) {
+      throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+    }
+
+    if (target.organizationId !== ctx?.organization?.id) {
+      throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+    }
+
+    authorizationService.requireRoleManagement(
+      ctx?.membership?.role!,
+      target.role,
+    );
+
+    if (target.role === SystemRole.OWNER) {
+      throw new AppError('Cannot remove owner', STATUS_CODE.BAD_REQUEST);
+    }
+    await this.remove(target);
+  }
+
+  // async leaveOrganization(ctx: RequestContext) {
+  //   if (ctx.membership?.role === SystemRole.OWNER) {
+  //     throw new AppError(
+  //       'Cannot leave until ownership transferred',
+  //       STATUS_CODE.FORBIDDEN,
+  //     );
+  //   }
+  //   return this.membershipRepository.delete({
+  //     organizationId: ctx.organization?.id,
+  //     userId: ctx.user?.id,
+  //   });
+  // }
+
   async create(permission: Partial<Membership>) {
     const newPermission = this.membershipRepository.create(permission);
     return await this.membershipRepository.save(newPermission);
