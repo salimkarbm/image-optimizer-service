@@ -2,9 +2,10 @@ import { Router } from 'express';
 import healthRoute from '../../modules/v1/security/health.route';
 import securityRoute from '../../modules/v1/security/security.route';
 import authRoute from '../../modules/v1/authentication/auth.route';
-import permissionRoute from '../../modules/v1/permissions/permission.routes';
+import permissionRoute from '../../modules/v1/permission/permission.routes';
 import roleRoute from '../../modules/v1/roles/role.routes';
 import organizationRoute from '../../modules/v1/organization/organization.route';
+import invitationRoute from '../../modules/v1/invitation/invitation.routes';
 
 const router = Router();
 
@@ -25,5 +26,8 @@ router.use(roleRoute);
 
 // Organization routes
 router.use(organizationRoute);
+
+// Invitation routes
+router.use(invitationRoute);
 
 export default router;

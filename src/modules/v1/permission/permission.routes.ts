@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { validateInputWithZod } from '../../../middlewares';
+import { validateInputWithZod } from '../../../middleware';
 import {
   createPermissionSchema,
   createPermissionSchemaRules,

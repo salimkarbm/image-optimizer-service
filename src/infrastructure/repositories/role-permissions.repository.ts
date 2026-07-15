@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../config/database/typeorm.config';
-import { RolePermission } from '../../modules/v1/permissions/entities/role-permissions.entity';
+import { RolePermission } from '../../modules/v1/permission/entities/role-permissions.entity';
 import BaseRepository from '../../shared/libs/base.repository';
 import { EntityManager } from 'typeorm';
 

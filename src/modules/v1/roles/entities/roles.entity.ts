@@ -1,20 +1,6 @@
 import BaseEntity from '../../../../infrastructure/repositories/base.entity';
 import { Column, Entity } from 'typeorm';
 
-export enum SystemRole {
-  OWNER = 'OWNER',
-  ADMIN = 'ADMIN',
-  EDITOR = 'EDITOR',
-  VIEWER = 'VIEWER',
-}
-
-export const ROLE_PRIORITY = {
-  OWNER: 4,
-  ADMIN: 3,
-  EDITOR: 2,
-  VIEWER: 1,
-} as const;
-
 @Entity({ name: 'roles', schema: 'public' })
 export class Role extends BaseEntity {
   @Column({ unique: true })

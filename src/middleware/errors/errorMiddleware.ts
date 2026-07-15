@@ -32,6 +32,10 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ): unknown => {
+  if (res.headersSent) {
+    // response already sent, don't try to send again
+    return next(err);
+  }
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
   if (ENVIRONMENT.APP.env === 'development') {

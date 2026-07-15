@@ -1,7 +1,7 @@
 import { JwtPayload } from 'jsonwebtoken';
 import { Membership } from '../../../modules/v1/membership/entities/members.entity';
 import { Organization } from '../../../modules/v1/organization/entities/organization.entity';
-import User from '../../../modules/v1/users/entities/user.entity';
+import User from '../../../modules/v1/user/entities/user.entity';
 import { Request } from 'express';
 
 export interface RequestContext {

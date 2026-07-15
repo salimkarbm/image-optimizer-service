@@ -1,17 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
-import { Permission } from '../modules/v1/permissions/entities/permission.entity';
+import { Permission } from '../shared/enums/permission.enum';
 import { AuthorizationService } from '../modules/v1/authorization/authorization.service';
-import { SystemRole } from '../modules/v1/roles/entities/roles.entity';
+import { SystemRole } from '../shared/enums/system-role.enum';
 
 //Very thin.That's intentional.
 export const authorize =
-  (
-    authorizationService: AuthorizationService,
-    permission: Permission | string,
-  ) =>
+  (authorizationService: AuthorizationService, permission: Permission) =>
   (req: Request, res: Response, next: NextFunction) => {
     authorizationService.requirePermission(
-      req.membership!.role.name as SystemRole,
+      req.membership!.role as SystemRole,
       permission,
     );
 

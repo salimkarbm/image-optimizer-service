@@ -8,10 +8,10 @@ import {
   STATUS_CODE,
 } from '../../../shared/constants';
 import { ENVIRONMENT } from '../../../config/environment';
-import User from '../users/entities/user.entity';
+import User from '../user/entities/user.entity';
 import { OTP_TYPE } from '../../../shared/enums/otp.enum';
 import jwtService from '../../../shared/services/jwt.service';
-import Session from '../users/entities/session.entity';
+import Session from '../user/entities/session.entity';
 import { addMinutes, addSeconds, differenceInMinutes } from 'date-fns';
 import { IsNull } from 'typeorm';
 import {
@@ -19,7 +19,7 @@ import {
   queueService,
 } from '../../../shared/services/queue.service';
 import { auditEvents } from '../audit/audit.service';
-import userService from '../users/users.service';
+import userService from '../user/users.service';
 import emailService from '../../../shared/services/email.service';
 import otpService from '../otp/otp.service';
 import sessionsService from '../sessions/sessions.service';
@@ -130,7 +130,10 @@ export class AuthService {
       req.body.email,
       OTP_TYPE.EMAIL_VERIFICATION,
     );
-    const user = await userService.create({ ...req.body });
+    const user = await userService.create({
+      ...req.body,
+      email: req.body.email.toLowerCase(),
+    });
 
     const message = {
       to: user.email,

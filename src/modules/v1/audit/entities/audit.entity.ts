@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import User from '../../users/entities/user.entity';
+import User from '../../user/entities/user.entity';
 import { AuditAction, AuditModule } from '../../../../shared/enums/index';
 import BaseEntity from '../../../../infrastructure/repositories/base.entity';
 

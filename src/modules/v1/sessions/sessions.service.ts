@@ -1,4 +1,4 @@
-import Session from '../users/entities/session.entity';
+import Session from '../user/entities/session.entity';
 import sessionRepo from '../../../infrastructure/repositories/user/session.repository';
 import { FindManyOptions, FindOneOptions, FindOptionsWhere } from 'typeorm';
 

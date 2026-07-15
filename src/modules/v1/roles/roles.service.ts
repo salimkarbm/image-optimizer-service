@@ -2,9 +2,11 @@ import { Request } from 'express';
 import { STATUS_CODE } from '../../../shared/constants';
 import { rolesRepo } from '../../../infrastructure/repositories/roles.repository';
 import AppError from '../../../shared/utils/errors/appError';
-import { Role, ROLE_PRIORITY, SystemRole } from './entities/roles.entity';
+import { Role } from './entities/roles.entity';
 import { FindManyOptions, FindOneOptions, FindOptionsWhere } from 'typeorm';
-import { PaginatedQuery } from 'src/shared/types';
+import { PaginatedQuery } from '../../../shared/types';
+import { SystemRole } from '../../../shared/enums/system-role.enum';
+import { ROLE_PRIORITY } from '../authorization/roles';
 export class RolesService {
   constructor(private readonly roleRepository: typeof rolesRepo) {}
 

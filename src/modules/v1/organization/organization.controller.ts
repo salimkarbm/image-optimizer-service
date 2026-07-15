@@ -67,17 +67,21 @@ export const getOrganization = async (
   }
 };
 
-export const context = async (req: Request, res: Response, next: NextFunction) => {
+export const context = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-  const ctx = getContext(req);
-  const context = await organizationService.getOrganizationContext(ctx);
-  return HttpResponse({
-    response: res,
-    data: context,
-    status: STATUS_CODE.OK,
-    message: SUCCESS_MESSAGE.FETCHED('Context'),
-  });
+    const ctx = getContext(req);
+    const context = await organizationService.getOrganizationContext(ctx);
+    return HttpResponse({
+      response: res,
+      data: context,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.FETCHED('Context'),
+    });
   } catch (err) {
-   return next(err);
+    return next(err);
   }
 };

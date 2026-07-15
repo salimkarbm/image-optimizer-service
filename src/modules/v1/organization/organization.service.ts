@@ -11,7 +11,8 @@ import { Membership } from '../membership/entities/members.entity';
 import { RequestContext } from '../../../shared/types/request/request';
 import permissionsService, {
   PermissionsService,
-} from '../permissions/permission.service';
+} from '../permission/permission.service';
+import { ROLE_PERMISSIONS } from '../authorization/role-permissions';
 
 export class OrganizationsService {
   constructor(
@@ -45,14 +46,11 @@ export class OrganizationsService {
   }
 
   async getOrganizationContext(cxt: RequestContext) {
-    const permissions = await this.permissionsService.getRolePermissions(
-      cxt.membership?.roleId.toString()!,
-    );
     return {
       user: cxt.user,
       organization: cxt.organization,
       membership: cxt.membership,
-      permissions: permissions,
+      permissions: ROLE_PERMISSIONS[cxt.membership?.role!] ?? [],
     };
   }
 

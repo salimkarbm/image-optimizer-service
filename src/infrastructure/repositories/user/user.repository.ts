@@ -1,5 +1,5 @@
 import { EntityManager } from 'typeorm';
-import User from '../../../modules/v1/users/entities/user.entity';
+import User from '../../../modules/v1/user/entities/user.entity';
 import BaseRepository from '../../../shared/libs/base.repository';
 import { AppDataSource } from '../../../config/database/typeorm.config';
 

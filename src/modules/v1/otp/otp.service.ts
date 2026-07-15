@@ -5,7 +5,7 @@ import { STATUS_CODE } from '../../../shared/constants';
 import AppError from '../../../shared/utils/errors/appError';
 import otpRepo from '../../../infrastructure/repositories/user/otp.repository';
 import { FindManyOptions, FindOneOptions, FindOptionsWhere } from 'typeorm';
-import OTP from '../users/entities/otp.entity';
+import OTP from '../user/entities/otp.entity';
 export class OTPService {
   private readonly tenMinutesInMs: number = 10 * 60 * 1000;
   private readonly oneMinuteInMs: number = 60 * 1000;

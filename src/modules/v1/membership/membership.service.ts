@@ -4,18 +4,23 @@ import {
   FindOneOptions,
   FindOptionsWhere,
 } from 'typeorm';
-import { SystemRole } from '../roles/entities/roles.entity';
 import { Membership } from './entities/members.entity';
 import { membershipRepo } from '../../../infrastructure/repositories/membership.repository';
 import rolesService, { RolesService } from '../roles/roles.service';
 import AppError from '../../../shared/utils/errors/appError';
 import { STATUS_CODE } from '../../../shared/constants';
-import { PaginatedQuery } from 'src/shared/types';
+import { PaginatedQuery } from '../../../shared/types';
+import User from '../user/entities/user.entity';
+import authorizationService, {
+  AuthorizationService,
+} from '../authorization/authorization.service';
+import { SystemRole } from '../../../shared/enums/system-role.enum';
 
 export class MembershipService {
   constructor(
     private readonly roleService: RolesService,
     private readonly membershipRepository: typeof membershipRepo,
+    // private readonly authorizationService: AuthorizationService,
   ) {}
 
   async createOwnerMembership(
@@ -25,7 +30,7 @@ export class MembershipService {
   ) {
     const ownerRole = await this.roleService.findOne({
       where: {
-        name: SystemRole.OWNER.toLowerCase(),
+        name: SystemRole.OWNER,
       },
     });
     if (!ownerRole) {
@@ -34,7 +39,22 @@ export class MembershipService {
     const membership = manager.create(Membership, {
       userId,
       organizationId,
-      roleId: ownerRole.id
+      role: SystemRole.OWNER,
+    });
+
+    return manager.save(membership);
+  }
+
+  async createMembership(
+    manager: EntityManager,
+    userId: string,
+    organizationId: string,
+    role: SystemRole,
+  ) {
+    const membership = manager.create(Membership, {
+      userId,
+      organizationId,
+      role,
     });
 
     return manager.save(membership);
@@ -47,6 +67,17 @@ export class MembershipService {
         organizationId,
       },
     });
+  }
+
+  async findMembershipByEmail(email: string, organizationId: string) {
+    return await this.membershipRepository
+      .createQueryBuilder('membership')
+      .innerJoin(User, 'user', 'membership.userId = user.id')
+      .where('user.email = :email', { email })
+      .andWhere('membership.organizationId = :organizationId', {
+        organizationId,
+      })
+      .getOne();
   }
 
   async requireMembership(userId: string, organizationId: string) {
@@ -69,6 +100,48 @@ export class MembershipService {
       },
     });
   }
+
+  async findById(membershipId: string) {
+    return this.membershipRepository.findOne({
+      where: {
+        id: membershipId,
+      },
+    });
+  }
+
+  async listMembers(organizationId: string) {
+    return this.membershipRepository
+      .createQueryBuilder('membership')
+      .leftJoinAndSelect(User, 'user', 'user.id = membership.userId')
+      .where('membership.organizationId = :organizationId', { organizationId })
+      .getMany();
+  }
+  // async updateRole(
+  //   ctx: RequestContext,
+  //   membershipId: string,
+  //   newRole: SystemRole,
+  // ) {
+  //   const target = await this.findById(membershipId);
+
+  //   if (!target) {
+  //     throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+  //   }
+
+  //   if (target.organizationId !== ctx?.organization?.id) {
+  //     throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+  //   }
+
+  //   this.authorizationService.requireRoleManagement(
+  //     ctx.membership.role,
+  //     target.roleId,
+  //   );
+  //   if (newRole === SystemRole.OWNER) {
+  //     throw new AppError('Use ownership transfer', STATUS_CODE.BAD_REQUEST);
+  //   }
+  //   target.role = newRole;
+
+  //   return this.membershipRepository.save(target);
+  // }
 
   async create(permission: Partial<Membership>) {
     const newPermission = this.membershipRepository.create(permission);
@@ -128,5 +201,9 @@ export class MembershipService {
   }
 }
 
-const membershipService = new MembershipService(rolesService, membershipRepo);
+const membershipService = new MembershipService(
+  rolesService,
+  membershipRepo,
+  // authorizationService,
+);
 export default membershipService;

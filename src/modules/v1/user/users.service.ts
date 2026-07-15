@@ -21,7 +21,7 @@ export class UserService {
     username?: string,
   ): Promise<User | null> {
     return this.userRepository.findOne({
-      where: [{ email }, { username }],
+      where: [{ email: email?.toLowerCase() }, { username }],
     });
   }
 

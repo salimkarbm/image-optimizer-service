@@ -8,18 +8,22 @@ export const loadMembership = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const membership = await membershipService.findOne({
-    where: {
-      userId: req?.user?.id,
-      organizationId: req?.organization?.id,
-    },
-  });
+  try {
+    const membership = await membershipService.findOne({
+      where: {
+        userId: req?.user?.id,
+        organizationId: req?.organization?.id,
+      },
+    });
 
-  if (!membership) {
-    throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+    if (!membership) {
+      throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+    }
+
+    req.membership = membership;
+
+    next();
+  } catch (err) {
+    return next(err);
   }
-
-  req.membership = membership;
-
-  next();
 };

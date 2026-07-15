@@ -3,7 +3,7 @@ import AppError from '../shared/utils/errors/appError';
 import { Response, NextFunction, Request } from 'express';
 import jwtService from '../shared/services/jwt.service';
 import { JwtPayload } from 'jsonwebtoken';
-import userService from '../modules/v1/users/users.service';
+import userService from '../modules/v1/user/users.service';
 
 export const authenticate = async (
   req: Request,

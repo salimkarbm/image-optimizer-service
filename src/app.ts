@@ -10,12 +10,12 @@ import compression from 'compression';
 import swaggerUi from 'swagger-ui-express';
 // import swaggerOptions from './swagger-jsdoc';
 import AppError from './shared/utils/errors/appError';
-import { errorHandler } from './middlewares/errors/errorMiddleware';
-import router from './routes/v1';
+import { errorHandler } from './middleware/errors/errorMiddleware';
+import router from './route/v1';
 import { AppDataSource } from './config/database/typeorm.config';
 import { ENVIRONMENT } from './config/environment';
 import { specConfig } from './docs/v1/swagger';
-import validateOpenApiSpec from './middlewares/openapi.validation.middleware';
+import validateOpenApiSpec from './middleware/openapi.validation.middleware';
 import redisService from './shared/services/Redis/queue-redis.service';
 import { getSecurityHeaders, getSwaggerOptions } from './shared/utils';
 

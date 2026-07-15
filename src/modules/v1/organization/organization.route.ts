@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { validateInputWithZod } from '../../../middlewares';
+import { validateInputWithZod } from '../../../middleware';
 import {
   context,
   create,
@@ -10,13 +10,13 @@ import {
   createOrganizationSchema,
   createOrganizationSchemaRules,
 } from './validations/create-input.validation';
-import { authenticate } from '../../../middlewares/authentication.middleware';
+import { authenticate } from '../../../middleware/authentication.middleware';
 import {
   GetOrganizationSchema,
   GetOrganizationSchemaRules,
 } from './validations/fetch-organization';
-import { loadOrganization } from '../../../middlewares/load-organization.middleware';
-import { loadMembership } from '../../../middlewares/load-membership.middleware';
+import { loadOrganization } from '../../../middleware/load-organization.middleware';
+import { loadMembership } from '../../../middleware/load-membership.middleware';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { validateInputWithZod } from '../../../middlewares';
+import { validateInputWithZod } from '../../../middleware';
 import { signUpSchema, signUpSchemaRules } from './validations';
 import { verifyEmailSchema, verifyEmailSchemaRules } from './validations';
 import {
@@ -30,9 +30,9 @@ import {
   signUp,
   verifyEmail,
 } from './auth.controller';
-import { authenticate } from '../../../middlewares/authentication.middleware';
-import { loadOrganization } from '../../../middlewares/load-organization.middleware';
-import { loadMembership } from '../../../middlewares/load-membership.middleware';
+import { authenticate } from '../../../middleware/authentication.middleware';
+import { loadOrganization } from '../../../middleware/load-organization.middleware';
+import { loadMembership } from '../../../middleware/load-membership.middleware';
 
 const router = Router();
 

@@ -1,4 +1,4 @@
-# Image Processing Service Backend
+# Image Optimizers Service Backend
 
 A TypeScript/Express backend foundation for an image processing service similar to Cloudinary. The project currently includes production-minded API infrastructure, authentication, email/OTP workflows, PostgreSQL persistence, Redis-backed background jobs, OpenAPI documentation, and security middleware. Image transformation work is represented in the queue layer and roadmap, ready to be connected to upload/storage APIs.
 

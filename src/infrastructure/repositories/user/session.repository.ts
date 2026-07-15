@@ -1,7 +1,7 @@
 import { EntityManager } from 'typeorm';
 import BaseRepository from '../../../shared/libs/base.repository';
 import { AppDataSource } from '../../../config/database/typeorm.config';
-import Session from '../../../modules/v1/users/entities/session.entity';
+import Session from '../../../modules/v1/user/entities/session.entity';
 
 export class SessionRepository extends BaseRepository<Session> {
   constructor(entityManager: EntityManager) {

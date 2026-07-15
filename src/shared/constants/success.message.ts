@@ -8,6 +8,7 @@ export const MESSAGES = () => {
     RESENT: (name: string) => `${name} resent successfully`,
     LOGGED_IN: (name: string) => `${name} logged in successfully`,
     REFRESHED: (name: string) => `${name} refreshed successfully`,
+    OK: (name: string) => `${name} successfully`,
     LOGGED_OUT: `Logged out successfully`,
     LOGGED_OUT_ALL: `Logged out from all devices successfully`,
     LOGIN: `Logged in successful`,

@@ -2,15 +2,16 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import dotenv from 'dotenv';
 import { ENVIRONMENT } from '../environment';
 import { AuditLog } from '../../modules/v1/audit/entities/audit.entity';
-import User from '../../modules/v1/users/entities/user.entity';
+import User from '../../modules/v1/user/entities/user.entity';
 import { join } from 'path';
-import OTP from '../../modules/v1/users/entities/otp.entity';
-import Session from '../../modules/v1/users/entities/session.entity';
+import OTP from '../../modules/v1/user/entities/otp.entity';
+import Session from '../../modules/v1/user/entities/session.entity';
 import { Role } from '../../modules/v1/roles/entities/roles.entity';
 import { Organization } from '../../modules/v1/organization/entities/organization.entity';
 import { Membership } from '../../modules/v1/membership/entities/members.entity';
-import { RolePermission } from '../../modules/v1/permissions/entities/role-permissions.entity';
-import { Permission } from '../../modules/v1/permissions/entities/permission.entity';
+import { RolePermission } from '../../modules/v1/permission/entities/role-permissions.entity';
+import { Permission } from '../../modules/v1/permission/entities/permission.entity';
+import { Invitation } from '../../modules/v1/invitation/entities/invitation.entity';
 
 dotenv.config();
 export const makeDataSource = (): DataSource => {
@@ -30,6 +31,7 @@ export const makeDataSource = (): DataSource => {
       Membership,
       RolePermission,
       Permission,
+      Invitation,
     ],
     migrations: [
       join(
