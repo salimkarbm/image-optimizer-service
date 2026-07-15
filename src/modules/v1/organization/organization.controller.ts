@@ -28,13 +28,14 @@ export const create = async (
 };
 
 export const listByUser = async (
-  req: RequestContext,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
+    const ctx = getContext(req);
     const organizations = await organizationService.getUserOrganizations(
-      req.user!.id,
+      ctx.user!.id,
     );
     return HttpResponse({
       response: res,

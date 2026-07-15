@@ -5,7 +5,11 @@ import { loadMembership } from '../../../middleware/load-membership.middleware';
 import { loadOrganization } from '../../../middleware/load-organization.middleware';
 import authorizationService from '../authorization/authorization.service';
 import { Permission } from '../../../shared/enums/permission.enum';
-import { acceptInvitation, createInvitation } from './invitation.controller';
+import {
+  acceptInvitation,
+  createInvitation,
+  listInvitations,
+} from './invitation.controller';
 import { validateInputWithZod } from '../../../middleware';
 import {
   CreateInvitationSchema,
@@ -39,6 +43,20 @@ router.post(
   authenticate,
 
   acceptInvitation,
+);
+
+router.get(
+  '/organizations/:organizationId/invitations',
+
+  authenticate,
+
+  loadOrganization,
+
+  loadMembership,
+
+  authorize(authorizationService, Permission.MEMBER_INVITE),
+
+  listInvitations,
 );
 
 export default router;

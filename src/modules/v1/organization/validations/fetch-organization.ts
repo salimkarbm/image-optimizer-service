@@ -10,7 +10,7 @@ export const GetOrganizationSchema = z.object({
 
 export const GetOrganizationSchemaRules: Record<
   string,
-  Array<'trim' | 'escape' | 'xss' >
+  Array<'trim' | 'escape' | 'xss'>
 > = {
-  organizationId: ['trim', 'escape', 'xss' ],
+  organizationId: ['trim', 'escape', 'xss'],
 };

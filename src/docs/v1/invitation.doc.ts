@@ -116,3 +116,31 @@
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
+
+/**
+ * @openapi
+ * /v1/organizations/{organizationId}/invitations:
+ *   get:
+ *     summary: Get all pending invitations
+ *     tags: [Invitation]
+ *     parameters:
+ *       - name: organizationId
+ *         in: path
+ *         description: Organization ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: All invitations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Invitation'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */

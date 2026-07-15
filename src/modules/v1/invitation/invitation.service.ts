@@ -120,7 +120,7 @@ export class InvitationService {
 
       invitation.acceptedAt = new Date();
 
-      await manager.getRepository(Invitation).save(invitation);;
+      await manager.getRepository(Invitation).save(invitation);
     });
   }
   async findPendInvitations(organizationId: string) {

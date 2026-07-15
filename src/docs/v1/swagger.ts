@@ -5,10 +5,10 @@ const swaggerOptions: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.3',
     info: {
-      title: 'Image Processor API',
+      title: 'Image Optimization API',
       version: '1.0.0',
       description:
-        'A comprehensive API for a image processing system with image manipulation, enhancement, and more.',
+        'A comprehensive API for a image optimization system with image manipulation, enhancement, and more.',
       contact: {
         name: 'API Support',
         email: 'support@example.com',
@@ -164,6 +164,22 @@ const swaggerOptions: swaggerJsdoc.Options = {
               type: 'string',
               description: 'Organization name',
               example: 'My Organization',
+            },
+          },
+        },
+        Invitation: {
+          type: 'object',
+          required: ['email', 'role'],
+          properties: {
+            email: {
+              type: 'string',
+              format: 'email',
+              example: 'john.doe@example.com',
+            },
+            role: {
+              type: 'string',
+              enum: ['ADMIN', 'OWNER', 'EDITOR', 'VIEWER'],
+              example: 'ADMIN',
             },
           },
         },
