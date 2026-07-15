@@ -8,6 +8,8 @@ export enum Permission {
   MEMBER_REMOVE = 'member:remove',
   MEMBER_UPDATE_ROLE = 'member:update-role',
 
+  ORGANIZATION_TRANSFER_OWNERSHIP = 'organization:transfer-ownership',
+
   ORGANIZATION_CREATE = 'organization:create',
   ORGANIZATION_UPDATE = 'organization:update',
   ORGANIZATION_DELETE = 'organization:delete',

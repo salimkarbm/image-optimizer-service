@@ -16,12 +16,14 @@ import authorizationService, {
 } from '../authorization/authorization.service';
 import { SystemRole } from '../../../shared/enums/system-role.enum';
 import { RequestContext } from '../../../shared/types/request/request';
+import { AppDataSource } from '../../../config/database/typeorm.config';
 
 export class MembershipService {
   constructor(
     private readonly roleService: RolesService,
     private readonly membershipRepository: typeof membershipRepo,
     private readonly authorizationService: AuthorizationService,
+    private readonly dataSource: typeof AppDataSource,
   ) {}
 
   async createOwnerMembership(
@@ -181,6 +183,37 @@ export class MembershipService {
     });
   }
 
+  async transferOwnership(ctx: RequestContext, targetMembershipId: string) {
+    if (ctx?.membership?.role !== SystemRole.OWNER) {
+      throw new AppError(
+        'Only owner can transfer ownership',
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+    const target = await this.findById(targetMembershipId);
+    if (!target) {
+      throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+    }
+
+    if (target.organizationId !== ctx?.organization?.id) {
+      throw new AppError('Member not found in same Organization', STATUS_CODE.NOT_FOUND);
+    }
+    /**** Why Transaction?
+     * Without it:
+     * Old owner demoted
+     * Database error
+     * No owner exists
+     */
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(Membership, ctx?.membership?.id, {
+        role: SystemRole.ADMIN,
+      });
+
+      await manager.update(Membership, target.id, {
+        role: SystemRole.OWNER,
+      });
+    });
+  }
   async create(permission: Partial<Membership>) {
     const newPermission = this.membershipRepository.create(permission);
     return await this.membershipRepository.save(newPermission);
@@ -243,5 +276,6 @@ const membershipService = new MembershipService(
   rolesService,
   membershipRepo,
   authorizationService,
+  AppDataSource,
 );
 export default membershipService;

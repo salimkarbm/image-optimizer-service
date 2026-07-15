@@ -4,6 +4,7 @@ import {
   leaveOrganization,
   listMembers,
   removeMember,
+  transferOwnership,
   updateRole,
 } from './membership.controller';
 import { loadOrganization } from '../../../middleware/load-organization.middleware';
@@ -55,6 +56,15 @@ router
     authenticate,
     loadOrganization,
     leaveOrganization,
+  );
+
+router
+  .route('/organizations/:organizationId/transfer-ownership')
+  .post(
+    validateInputWithZod(GetOrganizationSchema, GetOrganizationSchemaRules),
+    authenticate,
+    loadOrganization,
+    transferOwnership,
   );
 
 export default router;

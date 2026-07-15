@@ -138,3 +138,35 @@
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
+
+/**
+ * @openapi
+ * /v1/organizations/{organizationId}/transfer-ownership:
+ *   post:
+ *     summary: Transfer ownership of an organization
+ *     tags: [Members]
+ *     parameters:
+ *       - name: organizationId
+ *         in: path
+ *         description: Organization ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Ownership transferred successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Ownership transferred successfully"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */

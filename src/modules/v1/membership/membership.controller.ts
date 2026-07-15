@@ -96,3 +96,28 @@ export const leaveOrganization = async (
     return next(err);
   }
 };
+
+export const transferOwnership = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ctx = getContext(req);
+    if (req.params.organizationId !== ctx.organization?.id) {
+      throw new AppError('Organization not found', STATUS_CODE.NOT_FOUND);
+    }
+    const members = await membershipService.transferOwnership(
+      ctx,
+      req.params.memberId,
+    );
+    return HttpResponse({
+      response: res,
+      data: members,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.UPDATED('Member'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
