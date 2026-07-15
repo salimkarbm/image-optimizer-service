@@ -11,7 +11,7 @@ import {
   createRolePermission,
   getAllPermissions,
   getAllRolePermissions,
-} from './permission.controller';
+} from './permissions.controller';
 import {
   fetchRolePermissionsQuerySchema,
   fetchRolePermissionsQuerySchemaRules,

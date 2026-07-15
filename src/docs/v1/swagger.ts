@@ -205,7 +205,6 @@ const swaggerOptions: swaggerJsdoc.Options = {
               example: 'user',
             },
           },
-          
         },
         CreateUserRequest: {
           type: 'object',

@@ -15,12 +15,13 @@ import authorizationService, {
   AuthorizationService,
 } from '../authorization/authorization.service';
 import { SystemRole } from '../../../shared/enums/system-role.enum';
+import { RequestContext } from '../../../shared/types/request/request';
 
 export class MembershipService {
   constructor(
     private readonly roleService: RolesService,
     private readonly membershipRepository: typeof membershipRepo,
-    // private readonly authorizationService: AuthorizationService,
+    private readonly authorizationService: AuthorizationService,
   ) {}
 
   async createOwnerMembership(
@@ -116,32 +117,34 @@ export class MembershipService {
       .where('membership.organizationId = :organizationId', { organizationId })
       .getMany();
   }
-  // async updateRole(
-  //   ctx: RequestContext,
-  //   membershipId: string,
-  //   newRole: SystemRole,
-  // ) {
-  //   const target = await this.findById(membershipId);
 
-  //   if (!target) {
-  //     throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
-  //   }
+  async updateRole(
+    ctx: RequestContext,
+    membershipId: string,
+    newRole: SystemRole,
+  ) {
+    const target = await this.findById(membershipId);
 
-  //   if (target.organizationId !== ctx?.organization?.id) {
-  //     throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
-  //   }
+    if (!target) {
+      throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+    }
 
-  //   this.authorizationService.requireRoleManagement(
-  //     ctx.membership.role,
-  //     target.roleId,
-  //   );
-  //   if (newRole === SystemRole.OWNER) {
-  //     throw new AppError('Use ownership transfer', STATUS_CODE.BAD_REQUEST);
-  //   }
-  //   target.role = newRole;
+    if (target.organizationId !== ctx?.organization?.id) {
+      throw new AppError('Membership not found', STATUS_CODE.NOT_FOUND);
+    }
 
-  //   return this.membershipRepository.save(target);
-  // }
+    this.authorizationService.requireRoleManagement(
+      ctx?.membership?.role!,
+      target.role,
+    );
+
+    if (newRole === SystemRole.OWNER) {
+      throw new AppError('Use ownership transfer', STATUS_CODE.BAD_REQUEST);
+    }
+    target.role = newRole;
+
+    return this.membershipRepository.save(target);
+  }
 
   async create(permission: Partial<Membership>) {
     const newPermission = this.membershipRepository.create(permission);
@@ -204,6 +207,6 @@ export class MembershipService {
 const membershipService = new MembershipService(
   rolesService,
   membershipRepo,
-  // authorizationService,
+  authorizationService,
 );
 export default membershipService;

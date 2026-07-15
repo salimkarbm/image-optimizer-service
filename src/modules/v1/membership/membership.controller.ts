@@ -22,3 +22,26 @@ export const listMembers = async (
     return next(err);
   }
 };
+
+export const updateRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ctx = getContext(req);
+    const members = await membershipService.updateRole(
+      ctx,
+      req.params.memberId,
+      req.body.newRole,
+    );
+    return HttpResponse({
+      response: res,
+      data: members,
+      status: STATUS_CODE.OK,
+      message: SUCCESS_MESSAGE.UPDATED('Member'),
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

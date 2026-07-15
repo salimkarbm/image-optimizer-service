@@ -175,6 +175,7 @@
  *             properties:
  *               email:
  *                 type: string
+ *                 example: "john.doe@example.com"
  *     responses:
  *       200:
  *         description: Invitation canceled successfully.
