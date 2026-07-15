@@ -71,7 +71,7 @@ router.delete(
 
   authorize(authorizationService, Permission.MEMBER_INVITE),
 
-  cancelInvitation
+  cancelInvitation,
 );
 
 export default router;

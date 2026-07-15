@@ -183,6 +183,30 @@ const swaggerOptions: swaggerJsdoc.Options = {
             },
           },
         },
+
+        Membership: {
+          type: 'object',
+          required: ['userId', 'organizationId', 'role'],
+          properties: {
+            userId: {
+              type: 'string',
+              description: 'User ID',
+              example: '64a7b8c9d1e2f3g4h5i6j7k8',
+            },
+            organizationId: {
+              type: 'string',
+              description: 'Organization ID',
+              example: '64a7b8c9d1e2f3g4h5i6j7k8',
+            },
+            role: {
+              type: 'string',
+              enum: ['', 'user', 'moderator'],
+              description: 'User role',
+              example: 'user',
+            },
+          },
+          
+        },
         CreateUserRequest: {
           type: 'object',
           required: ['email', 'password', 'firstName', 'lastName', 'username'],

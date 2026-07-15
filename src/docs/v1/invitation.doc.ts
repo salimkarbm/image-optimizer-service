@@ -174,11 +174,11 @@
  *               - email
  *             properties:
  *               email:
- *                 type: string 
+ *                 type: string
  *     responses:
  *       200:
  *         description: Invitation canceled successfully.
- *         content: 
+ *         content:
  *           application/json:
  *             schema:
  *               type: object
